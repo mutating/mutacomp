@@ -162,6 +162,7 @@ class MutacompIsolate(AbstractIsolate):
         return 'mutacomp:' + self._api.base_url + ':' + self._id
 
     def get_resources_description(self) -> IsolateResourcesDescription:
+        # The API does not expose the neighbors sharing this computer, and the runtime has network access.
         return IsolateResourcesDescription(shared=True, shared_with=None, internet=True)
 
     def kill(self) -> None:
@@ -304,13 +305,24 @@ class MutacompIsolate(AbstractIsolate):
                         raise ProtocolError('Invalid benchmark version.') from None
                     versions.add(version)
                     name = text(row.get('benchmark_name'))
-                    measurement = BenchmarkResult(number=number(row.get('number')), when=when(row.get('created_at')), benchmarker_version=version)
+                    measurement = BenchmarkResult(
+                        number=number(row.get('number')),
+                        when=when(row.get('created_at')),
+                        benchmarker_version=version,
+                        # The API does not expose a Raspberry Pi 5 reference ratio yet.
+                        equivalent=None,
+                    )
                     if name in ('single_core', 'multi_core'):
                         if name in known:
                             raise ProtocolError('Duplicate benchmark measurement.')
                         known[name] = measurement
                 if len(versions) > 1:
                     raise ProtocolError('Latest benchmark results mix different versions.')
-                return Benchmarks(single_core=known.get('single_core'), multi_core=known.get('multi_core'))
+                return Benchmarks(
+                    single_core=known.get('single_core'),
+                    multi_core=known.get('multi_core'),
+                    # Nothing can be aggregated while per-benchmark equivalents are absent.
+                    equivalent=None,
+                )
             except MutacompError as error:
                 raise MetadataError('Could not retrieve valid benchmark metadata.') from error
