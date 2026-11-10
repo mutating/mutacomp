@@ -134,9 +134,10 @@ with manager.scope as isolate:
     single = meta.resources.benchmarks.single_core
     if single is not None:
         print(single.number, single.when, single.benchmarker_version)
+        print(single.equivalent)  # None until the API reports it
 ```
 
-The plugin requests `/v1/computers/{computer_id}/benchmark-results?latest_only=true` for the allocated computer. It maps `single_core` and `multi_core` to throng's benchset results. Scores describe the whole computer and are not rescaled to the isolate's resource reservation. `shared=True`; `shared_with=None` because the API does not report the current sharing count. `internet=True` because the runtime supports package installation and remote commands with network access.
+The plugin requests `/v1/computers/{computer_id}/benchmark-results?latest_only=true` for the allocated computer. It maps `single_core` and `multi_core` to throng's benchset results. Scores describe the whole computer and are not rescaled to the isolate's resource reservation. `shared=True`; `shared_with=None` because the API does not report the current sharing count. `internet=True` because the runtime supports package installation and remote commands with network access. The per-benchmark and aggregate `equivalent` fields are `None` because the API does not yet report a Raspberry Pi 5 reference ratio; they will be populated once the backend exposes it.
 
 An empty suite or an absent individual measurement becomes `None`. Only the greatest benchset version is used; within that version, the API returns the latest measurement of each benchmark. An older version is never substituted for a missing measurement. Unknown future benchmark names are ignored. Each access fetches fresh metadata. `when` is the latest result's timezone-aware `created_at`, normalized to UTC with microsecond precision. A new run of the same benchmark/version provides a new date; replaying the same run preserves its date. This requires the API's benchmark run history support. The date records when the server first stored that run, which can differ from when the agent executed it if uploading was delayed.
 
