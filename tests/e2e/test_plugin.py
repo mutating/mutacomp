@@ -120,9 +120,11 @@ def test_benchmark_metadata_follows_current_mock_api_measurements(timestamp, moc
         ]
         partial = isolate.meta
         assert partial.resources.benchmarks.single_core is None
+        assert partial.resources.benchmarks.equivalent is None
         assert partial.resources.benchmarks.multi_core.number == 9000
         assert partial.resources.benchmarks.multi_core.benchmarker_version == '1.0.0'
         assert partial.resources.benchmarks.multi_core.benchmarker == 'benchset'
+        assert partial.resources.benchmarks.multi_core.equivalent is None
         assert partial.resources.benchmarks.multi_core.when.isoformat() == '2026-10-19T12:30:00.123456+00:00'
         mock_api.benchmark_history.append(dict(mock_api.benchmarks[0]))
         mock_api.benchmarks[0].update(number=9100, created_at='2026-10-20T12:30:00.654321Z')
@@ -137,12 +139,14 @@ def test_benchmark_metadata_follows_current_mock_api_measurements(timestamp, moc
         assert complete.resources.shared is True
         assert complete.resources.shared_with is None
         assert complete.resources.internet is True
+        assert complete.resources.benchmarks.equivalent is None
         assert complete.resources.benchmarks.single_core.number == 1000
         assert complete.resources.benchmarks.multi_core.number == 9100
         for name in ('single_core', 'multi_core'):
             measurement = getattr(complete.resources.benchmarks, name)
             assert measurement.benchmarker_version == '1.10.0-rc.2+build.7'
             assert measurement.benchmarker == 'benchset'
+            assert measurement.equivalent is None
             assert measurement.when.isoformat() == '2026-10-20T12:30:00.654321+00:00'
 
 

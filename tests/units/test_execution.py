@@ -502,6 +502,7 @@ def test_benchmarks_are_optional_independently_and_fresh(records, benchmark_case
         assert metadata.resources.shared is True
         assert metadata.resources.shared_with is None
         assert metadata.resources.internet is True
+        assert metadata.resources.benchmarks.equivalent is None
         for name in ['single_core', 'multi_core']:
             value = getattr(metadata.resources.benchmarks, name)
             assert (value is None) == (name not in records)
@@ -509,6 +510,7 @@ def test_benchmarks_are_optional_independently_and_fresh(records, benchmark_case
                 assert value.number == scores[name]
                 assert value.benchmarker_version == version
                 assert value.benchmarker == 'benchset'
+                assert value.equivalent is None
                 assert value.when == datetime.fromisoformat(dates[name].replace('Z', '+00:00'))
         rows.clear()
         assert isolate.meta.resources.benchmarks.single_core is None
@@ -557,7 +559,9 @@ def test_unknown_future_benchmarks_do_not_break_metadata(field, configured, api_
         'created_at': '2026-10-19T12:30:00Z', 'benchmarker_version': '1.0.0',
     }])
     with configured.scope as isolate:
-        assert getattr(isolate.get_benchmarks(), field) is None
+        benchmarks = isolate.get_benchmarks()
+        assert getattr(benchmarks, field) is None
+        assert benchmarks.equivalent is None
 
 
 @pytest.mark.parametrize(('status', 'code'), [('failed', 0), ('cancelled', 0), ('completed', 1), ('completed', None)])
