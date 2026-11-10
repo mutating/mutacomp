@@ -20,9 +20,9 @@ import pytest
 from cantok import SimpleToken
 from throng.errors import InterruptedInstallationError
 
-from liquidcomp import LiquidManager, Settings
-from liquidcomp.api import API, Reply
-from liquidcomp.errors import (
+from mutacomp import MutacompManager, Settings
+from mutacomp.api import API, Reply
+from mutacomp.errors import (
     APIError,
     IsolateUnavailableError,
     MetadataError,
@@ -37,8 +37,8 @@ from tests.units.test_execution import result
 
 def test_changed_api_endpoint_uses_its_own_keyring_namespace(api_stub, clean_environment):
     """Changing a manager's settings must not send a previous server's stored token elsewhere."""
-    clean_environment.values['liquidcomp:https://api.mutating.tech/v1', 'LIQUID_TOKEN'] = 'old-server-secret'
-    manager = LiquidManager()
+    clean_environment.values['mutacomp:https://api.mutating.tech/v1', 'MUTACOMP_TOKEN'] = 'old-server-secret'
+    manager = MutacompManager()
     manager.settings.api_url = 'https://another.invalid/v1'
     with pytest.raises(MissingTokenError):
         manager.get(b'state')
@@ -48,7 +48,7 @@ def test_changed_api_endpoint_uses_its_own_keyring_namespace(api_stub, clean_env
 @pytest.mark.parametrize('phase', ['stat', 'resolve', 'walk'])
 def test_unreadable_subdirectory_does_not_silently_disappear(phase, tmp_path, monkeypatch):
     """Prevent root permission errors from escaping StateError or silently producing partial state."""
-    manager = LiquidManager(tmp_path)
+    manager = MutacompManager(tmp_path)
     def walk(_root, *, onerror=None, **_kwargs):
         if onerror is not None:
             onerror(PermissionError('unreadable source directory'))
@@ -82,7 +82,7 @@ def test_internal_symlinks_remain_portable(tmp_path, absolute, nested, target_ki
         (directory / 'link').symlink_to(target if absolute else Path(expected), target_is_directory=target_kind == 'directory')
     except OSError:
         pytest.skip('Symlink privileges unavailable')
-    with open_tar(fileobj=BytesIO(LiquidManager(tmp_path).read())) as archive:
+    with open_tar(fileobj=BytesIO(MutacompManager(tmp_path).read())) as archive:
         link = archive.getmember('nested/link' if nested else 'link')
         assert link.issym()
         assert link.linkname == expected
@@ -100,7 +100,7 @@ def test_state_size_limit_includes_archive_overhead(tmp_path, mode):
     if mode != 'padding':
         (tmp_path / 'data').write_bytes(b'x' * (1024 if mode == 'file' else 0))
     with pytest.raises(StateError):
-        LiquidManager(tmp_path, settings=Settings(max_artifact_bytes=128)).read()
+        MutacompManager(tmp_path, settings=Settings(max_artifact_bytes=128)).read()
 
 
 @pytest.mark.parametrize('native', [False, True])
@@ -119,7 +119,7 @@ def test_special_file_is_not_uploaded(tmp_path, monkeypatch, native):
             return os.stat_result((stat.S_IFIFO, *info[1:])) if path == pipe else info
         monkeypatch.setattr(Path, 'lstat', lstat)
     with pytest.raises(StateError, match='unsupported special file'):
-        LiquidManager(tmp_path).read()
+        MutacompManager(tmp_path).read()
 
 
 @pytest.mark.parametrize('state', ['not bytes', b'oversized'])
@@ -166,7 +166,7 @@ def test_failed_cleanup_preserves_original_allocation_error(configured, api_stub
         instance = API(*args, **kwargs)
         clients.append(instance._client)
         return instance
-    monkeypatch.setattr('liquidcomp.manager.API', api)
+    monkeypatch.setattr('mutacomp.manager.API', api)
     api_stub.routes['POST', '/v1/isolates'] = lambda _request: httpx.Response(409)
     api_stub.routes['DELETE', '/v1/artifacts/' + api_stub.artifact_id] = lambda _request: httpx.Response(503)
     try:
@@ -384,7 +384,7 @@ def test_close_waits_for_inflight_reads(operation, configured, api_stub):
 
 def test_excluded_file_is_not_archived(tmp_path):
     (tmp_path / 'secret').write_text('never upload')
-    with open_tar(fileobj=BytesIO(LiquidManager(tmp_path, exclude=['secret']).read())) as archive:
+    with open_tar(fileobj=BytesIO(MutacompManager(tmp_path, exclude=['secret']).read())) as archive:
         assert archive.getnames() == []
 
 

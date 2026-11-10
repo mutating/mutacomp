@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, cast
 from uuid import UUID
 
-from liquidcomp.errors import ProtocolError
+from mutacomp.errors import ProtocolError
 
 
 def object_value(value: object) -> Dict[str, object]:

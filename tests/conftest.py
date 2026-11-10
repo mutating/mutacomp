@@ -12,8 +12,8 @@ import httpx
 import keyring
 import pytest
 
-import liquidcomp.auth
-from liquidcomp import LiquidManager, Settings
+import mutacomp.auth
+from mutacomp import MutacompManager, Settings
 
 
 @pytest.fixture
@@ -32,7 +32,8 @@ def byte_stream():
 def clean_environment(tmp_path, monkeypatch):
     """Give each test fresh settings and a keychain which cannot reach OS secrets."""
     for name in list(os.environ):
-        if name.startswith('LIQUID_'):
+        # Coverage selectors must reach subprocesses with the same branch mode.
+        if name.startswith('MUTACOMP_') and not name.startswith('MUTACOMP_COVERAGE_'):
             monkeypatch.delenv(name)
     if os.environ.get('COVERAGE_PROCESS_START'):
         monkeypatch.setenv('COVERAGE_FILE', str(Path(__file__).resolve().parents[1] / '.coverage'))
@@ -56,7 +57,7 @@ def clean_environment(tmp_path, monkeypatch):
 def terminal(monkeypatch):
     """Advertise terminal capability only when getpass itself is replaced by a test."""
     monkeypatch.setattr(sys.stdin, 'isatty', lambda: True)
-    monkeypatch.setattr(liquidcomp.auth, 'sys', SimpleNamespace(
+    monkeypatch.setattr(mutacomp.auth, 'sys', SimpleNamespace(
         stdin=sys.stdin, stderr=SimpleNamespace(isatty=lambda: True),
         stdout=SimpleNamespace(write=lambda value: sys.stdout.write(value)),
     ))
@@ -136,5 +137,5 @@ def api_stub(monkeypatch):
 def configured(request, monkeypatch):
     """A credentialed manager with fast polling and no real HTTP or keychain access."""
     request.getfixturevalue('api_stub')
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    return LiquidManager(settings=Settings(poll_interval=0.01, retry_backoff=0.0))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    return MutacompManager(settings=Settings(poll_interval=0.01, retry_backoff=0.0))

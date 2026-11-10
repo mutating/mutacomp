@@ -42,7 +42,7 @@ jobs:
     - name: Run tests and show coverage on the command line
       shell: bash
       run: |
-        pth_file="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')/liquidcomp_coverage_process_startup.pth"
+        pth_file="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')/mutacomp_coverage_process_startup.pth"
         printf "import os; os.getenv('COVERAGE_PROCESS_START') and __import__('coverage').process_startup()\n" > "$pth_file"
         coverage erase
         COVERAGE_PROCESS_START="$PWD/pyproject.toml" coverage run -m pytest -n auto --cache-clear --assert=plain
@@ -63,10 +63,10 @@ jobs:
     - name: Run tests and show the branch coverage on the command line
       shell: bash
       run: |
-        pth_file="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')/liquidcomp_coverage_process_startup.pth"
+        pth_file="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')/mutacomp_coverage_process_startup.pth"
         printf "import os; os.getenv('COVERAGE_PROCESS_START') and __import__('coverage').process_startup()\n" > "$pth_file"
         coverage erase
-        LIQUIDCOMP_COVERAGE_BRANCH=true COVERAGE_PROCESS_START="$PWD/pyproject.toml" coverage run -m pytest -n auto --cache-clear --assert=plain
+        MUTACOMP_COVERAGE_BRANCH=true COVERAGE_PROCESS_START="$PWD/pyproject.toml" coverage run -m pytest -n auto --cache-clear --assert=plain
         coverage combine
         coverage report -m --fail-under=100
 
@@ -89,20 +89,20 @@ jobs:
     - name: Install dependencies
       shell: bash
       run: |
-        uv venv --python python "$RUNNER_TEMP/liquidcomp-wheel"
-        uv pip install --python "$RUNNER_TEMP/liquidcomp-wheel/bin/python" -r requirements_dev.txt
+        uv venv --python python "$RUNNER_TEMP/mutacomp-wheel"
+        uv pip install --python "$RUNNER_TEMP/mutacomp-wheel/bin/python" -r requirements_dev.txt
 
     - name: Build and install the wheel
       shell: bash
       run: |
-        "$RUNNER_TEMP/liquidcomp-wheel/bin/python" -m build .
-        uv pip install --python "$RUNNER_TEMP/liquidcomp-wheel/bin/python" dist/*.whl
+        "$RUNNER_TEMP/mutacomp-wheel/bin/python" -m build .
+        uv pip install --python "$RUNNER_TEMP/mutacomp-wheel/bin/python" dist/*.whl
 
     - name: Run e2e against the installed wheel
       shell: bash
       run: |
-        mkdir "$RUNNER_TEMP/liquidcomp-wheel-tests"
-        cp -R tests "$RUNNER_TEMP/liquidcomp-wheel-tests/tests"
-        cd "$RUNNER_TEMP/liquidcomp-wheel-tests"
+        mkdir "$RUNNER_TEMP/mutacomp-wheel-tests"
+        cp -R tests "$RUNNER_TEMP/mutacomp-wheel-tests/tests"
+        cd "$RUNNER_TEMP/mutacomp-wheel-tests"
         unset PYTHONPATH
-        "$RUNNER_TEMP/liquidcomp-wheel/bin/python" -m pytest tests/e2e
+        "$RUNNER_TEMP/mutacomp-wheel/bin/python" -m pytest tests/e2e

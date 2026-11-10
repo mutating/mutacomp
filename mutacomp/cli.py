@@ -1,21 +1,21 @@
-"""The liquid executable delegates initialization and diagnostics to its manager."""
+"""The mutacomp executable delegates initialization and diagnostics to its manager."""
 
 import argparse
 import sys
 from typing import Optional, Sequence, cast
 
-from liquidcomp.errors import AuthenticationCancelledError, LiquidError
-from liquidcomp.manager import LiquidManager
+from mutacomp.errors import AuthenticationCancelledError, MutacompError
+from mutacomp.manager import MutacompManager
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(prog='liquid', description='Liquid Compute credentials and connectivity')
+    parser = argparse.ArgumentParser(prog='mutacomp', description='Mutating Compute credentials and connectivity')
     parser.add_argument('command', choices=('init', 'status'))
     arguments = parser.parse_args(argv)
     try:
-        manager = LiquidManager()
+        manager = MutacompManager()
     except Exception:  # noqa: BLE001 - configuration providers expose different parser/IO errors.
-        sys.stderr.write('Invalid Liquid configuration. Check LIQUID_* and liquid configuration files.\n')
+        sys.stderr.write('Invalid Mutating Compute configuration. Check MUTACOMP_* and mutacomp configuration files.\n')
         return 1
     try:
         if cast(str, arguments.command) == 'init':
@@ -40,7 +40,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except (AuthenticationCancelledError, KeyboardInterrupt):
         sys.stderr.write('Initialization cancelled.\n')
         return 130
-    except LiquidError as error:
+    except MutacompError as error:
         sys.stderr.write(str(error) + '\n')
         return 1
 

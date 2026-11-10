@@ -9,7 +9,7 @@ from typing import List, NoReturn, Optional
 
 from pathspec import GitIgnoreSpec
 
-from liquidcomp.errors import StateError
+from mutacomp.errors import StateError
 
 
 def _walk_error(error: OSError) -> NoReturn:

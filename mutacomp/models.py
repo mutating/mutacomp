@@ -7,7 +7,7 @@ from throng.abstracts.results import SimpleRunResult
 
 
 @dataclass
-class LiquidResult(SimpleRunResult):
+class MutacompResult(SimpleRunResult):
     id: Optional[str] = None
     status: str = 'cancelled'
     killed_by_token: bool = False

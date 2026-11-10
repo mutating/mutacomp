@@ -26,8 +26,8 @@ from throng.errors import (
     PreparationCommandFailedError,
 )
 
-from liquidcomp import LiquidManager, Settings, manager as manager_module
-from liquidcomp.errors import (
+from mutacomp import MutacompManager, Settings, manager as manager_module
+from mutacomp.errors import (
     APIError,
     CancellationTimeoutError,
     IsolateClosedError,
@@ -38,7 +38,7 @@ from liquidcomp.errors import (
     ProtocolError,
     StateError,
 )
-from liquidcomp.isolate import _Lease
+from mutacomp.isolate import _Lease
 
 
 def result(api, status='completed', **changes):
@@ -58,7 +58,7 @@ def test_directory_state_preserves_files_empty_directories_and_exclusions(tmp_pa
     (tmp_path / 'source.txt').chmod(mode)
     (tmp_path / 'ignored').mkdir()
     (tmp_path / 'ignored' / 'secret').write_text('private')
-    manager = LiquidManager(tmp_path, exclude=['ignored/'])
+    manager = MutacompManager(tmp_path, exclude=['ignored/'])
     if exact_cap:
         manager.settings.max_artifact_bytes = len(manager.read())
     with open_tar(fileobj=BytesIO(manager.read())) as archive:
@@ -70,7 +70,7 @@ def test_directory_state_preserves_files_empty_directories_and_exclusions(tmp_pa
 def test_directory_state_rejects_missing_root(tmp_path):
     """State errors are raised before any credential or network operation."""
     with pytest.raises(StateError):
-        LiquidManager(tmp_path / 'missing').read()
+        MutacompManager(tmp_path / 'missing').read()
 
 
 @pytest.mark.parametrize('target', ['outside', 'outside_prefix', 'dangling', 'loop', 'cross_drive'])
@@ -85,7 +85,7 @@ def test_directory_state_rejects_escaping_links(tmp_path, target, excluded, monk
         link.symlink_to({'outside': tmp_path.parent, 'outside_prefix': prefix_target, 'dangling': tmp_path / 'missing', 'loop': link, 'cross_drive': tmp_path.parent}[target])
     except OSError:
         pytest.skip('Symlink privileges unavailable')
-    manager = LiquidManager(tmp_path, exclude=['outside'] if excluded else None)
+    manager = MutacompManager(tmp_path, exclude=['outside'] if excluded else None)
     def cross_drive(_paths):
         return ntpath.commonpath((r'C:\state', r'D:\outside'))
     with monkeypatch.context() as patch:
@@ -455,8 +455,8 @@ def test_invalid_artifact_is_not_returned(failure, configured, api_stub, byte_st
 def test_setup_failure_uses_throng_cleanup(phase, error, entrypoint, configured, api_stub):
     """Prevent constructor or registered-plugin setup arguments from being dropped or leaking allocations."""
     manager = (
-        LiquidManager(settings=configured.settings, **{phase: ['failing']}) if entrypoint == 'direct'
-        else throng['liquid']('.', **{phase: ['failing']})['liquid']
+        MutacompManager(settings=configured.settings, **{phase: ['failing']}) if entrypoint == 'direct'
+        else throng['mutacomp']('.', **{phase: ['failing']})['mutacomp']
     )
     api_stub.routes['POST', '/v1/commands/results'] = lambda _request: result(api_stub, success=False, returncode=1)
     with pytest.raises(error):
@@ -501,6 +501,7 @@ def test_benchmarks_are_optional_independently_and_fresh(records, benchmark_case
         assert metadata.id == isolate.get_id()
         assert metadata.resources.shared is True
         assert metadata.resources.shared_with is None
+        assert metadata.resources.internet is True
         for name in ['single_core', 'multi_core']:
             value = getattr(metadata.resources.benchmarks, name)
             assert (value is None) == (name not in records)

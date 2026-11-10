@@ -10,9 +10,9 @@ from uuid import uuid4
 from cantok import AbstractToken, DefaultToken
 from throng import AbstractManager
 
-from liquidcomp.api import API
-from liquidcomp.auth import Credentials, validate_token
-from liquidcomp.errors import (
+from mutacomp.api import API
+from mutacomp.auth import Credentials, validate_token
+from mutacomp.errors import (
     APIError,
     InvalidTokenError,
     IsolateUnavailableError,
@@ -25,14 +25,14 @@ from liquidcomp.errors import (
     ServerUnavailableError,
     StateError,
 )
-from liquidcomp.isolate import LiquidIsolate, _Lease
-from liquidcomp.models import Status
-from liquidcomp.protocol import identifier, text
-from liquidcomp.settings import Settings
-from liquidcomp.state import read_state
+from mutacomp.isolate import MutacompIsolate, _Lease
+from mutacomp.models import Status
+from mutacomp.protocol import identifier, text
+from mutacomp.settings import Settings
+from mutacomp.state import read_state
 
 
-class LiquidManager(AbstractManager):
+class MutacompManager(AbstractManager):
     def __init__(self, path: Union[str, Path] = '.', exclude: Optional[List[str]] = None, prepare: Optional[List[str]] = None, packages: Optional[List[str]] = None, *, settings: Optional[Settings] = None) -> None:
         super().__init__(path, exclude, prepare, packages)
         self.settings = settings if settings is not None else Settings()
@@ -44,7 +44,7 @@ class LiquidManager(AbstractManager):
     def read(self) -> bytes:
         return read_state(self.path, self.exclude, self.settings.max_artifact_bytes)
 
-    def _get(self, state: bytes, token: AbstractToken = DefaultToken()) -> LiquidIsolate:  # noqa: B008, PLR0915
+    def _get(self, state: bytes, token: AbstractToken = DefaultToken()) -> MutacompIsolate:  # noqa: B008, PLR0915
         if not token:
             raise OperationCancelledError('Isolate allocation was canceled.')
         if not isinstance(state, bytes) or len(state) > self.settings.max_artifact_bytes:
@@ -94,7 +94,7 @@ class LiquidManager(AbstractManager):
                     lease = worker
                 lease.check()
                 if status == 'ready':
-                    return LiquidIsolate(api, isolate_id, identifier(payload.get('computer_id')), lease)
+                    return MutacompIsolate(api, isolate_id, identifier(payload.get('computer_id')), lease)
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise OperationTimeoutError('Timed out waiting for a remote isolate.')

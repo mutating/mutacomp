@@ -14,8 +14,8 @@ from cantok import TimeoutToken
 from throng import throng
 from throng.errors import PreparationCommandFailedError
 
-from liquidcomp import LiquidManager, Settings
-from liquidcomp.errors import MetadataError, ServerUnavailableError
+from mutacomp import MutacompManager, Settings
+from mutacomp.errors import MetadataError, ServerUnavailableError
 
 
 def python_command(source):
@@ -32,9 +32,9 @@ def python_command(source):
 @pytest.mark.parametrize(('credential', 'newline'), [('valid-token', '\n'), ('valid-company', '\r\n')])
 def test_installed_plugin_executes_chains_and_round_trips_state(mock_api, monkeypatch, tmp_path, credential, newline):
     """Protect single-plugin selection, state round trips and Linux output on Windows mock hosts."""
-    monkeypatch.setenv('LIQUID_TOKEN', credential)
-    monkeypatch.setenv('LIQUID_API_URL', mock_api.url)
-    monkeypatch.setenv('LIQUID_POLL_INTERVAL', '0.01')
+    monkeypatch.setenv('MUTACOMP_TOKEN', credential)
+    monkeypatch.setenv('MUTACOMP_API_URL', mock_api.url)
+    monkeypatch.setenv('MUTACOMP_POLL_INTERVAL', '0.01')
     startup = tmp_path / 'python-startup'
     startup.mkdir()
     (startup / 'sitecustomize.py').write_text(
@@ -47,8 +47,8 @@ def test_installed_plugin_executes_chains_and_round_trips_state(mock_api, monkey
     source.mkdir()
     (source / 'input.txt').write_text('original')
     (source / 'secret').write_text('excluded')
-    manager = throng['liquid'].one(source, exclude=['secret'])
-    assert isinstance(manager, LiquidManager)
+    manager = throng['mutacomp'].one(source, exclude=['secret'])
+    assert isinstance(manager, MutacompManager)
     with manager.scope as isolate:
         output = isolate.run(python_command("import sys; from pathlib import Path; print(Path('input.txt').read_text()); print('diagnostic', file=sys.stderr)"))
         assert output.stdout == 'original\n'
@@ -76,8 +76,8 @@ def test_installed_plugin_executes_chains_and_round_trips_state(mock_api, monkey
 
 def test_cancellation_over_http_and_large_output_artifact(mock_api, monkeypatch, tmp_path):
     """Cancellation reaches the API, and artifact output is complete rather than its preview."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01))
     with manager.scope as isolate:
         output = isolate.run(python_command('import time; time.sleep(10)'), token=TimeoutToken(0.2))
         assert not output.success
@@ -90,9 +90,9 @@ def test_cancellation_over_http_and_large_output_artifact(mock_api, monkeypatch,
 
 def test_uncertain_command_response_executes_exactly_once(mock_api, monkeypatch, tmp_path):
     """The retry returns the original command instead of repeating its filesystem side effect."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
     mock_api.drop_command_response = True
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, retry_backoff=0.0))
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, retry_backoff=0.0))
     with manager.scope as isolate:
         output = isolate.run(python_command("from pathlib import Path; p=Path('count'); p.write_text((p.read_text() if p.exists() else '')+'x')"))
         assert output.success
@@ -106,8 +106,8 @@ def test_uncertain_command_response_executes_exactly_once(mock_api, monkeypatch,
 ])
 def test_benchmark_metadata_follows_current_mock_api_measurements(timestamp, mock_api, monkeypatch, tmp_path):
     """Prevent reruns exposing the first date, stale versions, filled gaps and lost UTC precision."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url))
     with manager.scope as isolate:
         assert isolate.meta.resources.benchmarks.single_core is None
         mock_api.benchmarks[:] = [{
@@ -136,6 +136,7 @@ def test_benchmark_metadata_follows_current_mock_api_measurements(timestamp, moc
         complete = isolate.meta
         assert complete.resources.shared is True
         assert complete.resources.shared_with is None
+        assert complete.resources.internet is True
         assert complete.resources.benchmarks.single_core.number == 1000
         assert complete.resources.benchmarks.multi_core.number == 9100
         for name in ('single_core', 'multi_core'):
@@ -147,8 +148,8 @@ def test_benchmark_metadata_follows_current_mock_api_measurements(timestamp, moc
 
 def test_parallel_isolates_have_independent_state(mock_api, monkeypatch, tmp_path):
     """A shared manager can allocate independent remote working directories concurrently."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01))
     def work(number):
         return manager.run(python_command(f"from pathlib import Path; p=Path('own'); p.write_text('{number}'); print(p.read_text())")).stdout
     with ThreadPoolExecutor(max_workers=3) as pool:
@@ -160,11 +161,11 @@ def test_parallel_isolates_have_independent_state(mock_api, monkeypatch, tmp_pat
 def test_cli_status_subprocess(cli_environment, token, expected, word, entrypoint):
     """Prevent missing console scripts or invalid/disconnected labels from passing CLI checks."""
     if token is not None:
-        cli_environment['LIQUID_TOKEN'] = token
+        cli_environment['MUTACOMP_TOKEN'] = token
     if entrypoint == 'module':
-        command = [sys.executable, '-m', 'liquidcomp']
+        command = [sys.executable, '-m', 'mutacomp']
     else:
-        executable = shutil.which('liquid', path=sysconfig.get_path('scripts'))
+        executable = shutil.which('mutacomp', path=sysconfig.get_path('scripts'))
         assert executable is not None
         command = [executable]
     process = subprocess.run([*command, 'status'], env=cli_environment, input='', capture_output=True, text=True, timeout=15, check=False)
@@ -177,7 +178,7 @@ def test_cli_status_subprocess(cli_environment, token, expected, word, entrypoin
 
 def test_cli_init_rejects_piped_secret(cli_environment):
     """A noninteractive subprocess cannot echo a secret or pretend it was securely saved."""
-    process = subprocess.run([sys.executable, '-m', 'liquidcomp', 'init'], env=cli_environment, input='new-token\n', capture_output=True, text=True, timeout=15, check=False)
+    process = subprocess.run([sys.executable, '-m', 'mutacomp', 'init'], env=cli_environment, input='new-token\n', capture_output=True, text=True, timeout=15, check=False)
     assert process.returncode == 1
     assert 'new-token' not in process.stdout + process.stderr
 
@@ -185,11 +186,11 @@ def test_cli_init_rejects_piped_secret(cli_environment):
 @pytest.mark.parametrize('failure', ['denied', 'missing', 'unavailable', 'malformed'])
 def test_benchmark_http_failures_do_not_disable_commands(failure, mock_api, monkeypatch, tmp_path):
     """An API error or broken measurement differs from an empty suite over real HTTP."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
     mock_api.benchmark_status = {'denied': 403, 'missing': 404, 'unavailable': 503, 'malformed': 200}[failure]
     mock_api.benchmarks[:] = [{'computer_id': mock_api.computer_id, 'benchmark_name': 'single_core', 'number': -1,
                              'created_at': 'yesterday', 'benchmarker_version': '1.0.0'}]
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, retry_backoff=0))
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, retry_backoff=0))
     with manager.scope as isolate:
         with pytest.raises(MetadataError):
             isolate.get_benchmarks()
@@ -201,8 +202,8 @@ def test_benchmark_http_failures_do_not_disable_commands(failure, mock_api, monk
 
 def test_failed_remote_prepare_releases_allocation(mock_api, monkeypatch, tmp_path):
     """A real remote process failure during preparation follows throng's cleanup contract."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    manager = LiquidManager(tmp_path, prepare=[python_command('raise SystemExit(7)')], settings=Settings(api_url=mock_api.url, poll_interval=0.01))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    manager = MutacompManager(tmp_path, prepare=[python_command('raise SystemExit(7)')], settings=Settings(api_url=mock_api.url, poll_interval=0.01))
     with pytest.raises(PreparationCommandFailedError):
         manager.get(manager.read())
     assert all(row['status'] == 'destroyed' for row in mock_api.isolates.values())
@@ -210,10 +211,10 @@ def test_failed_remote_prepare_releases_allocation(mock_api, monkeypatch, tmp_pa
 
 @pytest.mark.parametrize('timestamp', ['0001-01-01T00:00:00+01:00', '9999-12-31T23:59:59-01:00'])
 def test_benchmark_utc_overflow_is_a_metadata_error(timestamp, mock_api, monkeypatch, tmp_path):
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
     mock_api.benchmarks[:] = [{'computer_id': mock_api.computer_id, 'benchmark_name': 'single_core', 'number': 1,
                              'created_at': timestamp, 'benchmarker_version': '1.0.0'}]
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01))
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01))
     with manager.scope as isolate:
         with pytest.raises(MetadataError):
             isolate.get_benchmarks()
@@ -221,19 +222,19 @@ def test_benchmark_utc_overflow_is_a_metadata_error(timestamp, mock_api, monkeyp
 
 
 def test_command_directory_and_environment_cross_http(mock_api, monkeypatch, tmp_path):
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
     source = tmp_path / 'source'
     (source / 'nested').mkdir(parents=True)
-    settings = Settings(api_url=mock_api.url, poll_interval=0.01, cwd='nested', env={'LIQUID_COMMAND_PROBE': 'works'})
-    manager = LiquidManager(source, settings=settings)
+    settings = Settings(api_url=mock_api.url, poll_interval=0.01, cwd='nested', env={'MUTACOMP_COMMAND_PROBE': 'works'})
+    manager = MutacompManager(source, settings=settings)
     with manager.scope as isolate:
-        output = isolate.run(python_command("import os; from pathlib import Path; print(Path.cwd().name + '|' + os.environ['LIQUID_COMMAND_PROBE'])"))
+        output = isolate.run(python_command("import os; from pathlib import Path; print(Path.cwd().name + '|' + os.environ['MUTACOMP_COMMAND_PROBE'])"))
         assert output.stdout == 'nested|works\n'
 
 
 def test_shell_redirection_crosses_http(mock_api, monkeypatch, tmp_path):
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, shell=True))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, shell=True))
     with manager.scope as isolate:
         output = isolate.run('"' + sys.executable + '" -c "print(123)" > saved.txt')
         assert output.success
@@ -243,8 +244,8 @@ def test_shell_redirection_crosses_http(mock_api, monkeypatch, tmp_path):
 
 
 def test_server_command_timeout_crosses_http(mock_api, monkeypatch, tmp_path):
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, command_timeout=1))
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, command_timeout=1))
     with manager.scope as isolate:
         output = isolate.run(python_command('import time; time.sleep(2)'))
         assert not output.success
@@ -254,9 +255,9 @@ def test_server_command_timeout_crosses_http(mock_api, monkeypatch, tmp_path):
 
 
 def test_provisioning_lease_is_renewed_over_http(mock_api, monkeypatch, tmp_path):
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
     mock_api.provisioning_renewals_required = 2
-    manager = LiquidManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, renew_interval=0.02, operation_timeout=1))
+    manager = MutacompManager(tmp_path, settings=Settings(api_url=mock_api.url, poll_interval=0.01, renew_interval=0.02, operation_timeout=1))
     with manager.scope as isolate:
         assert mock_api.renewals >= 2
         assert isolate.run(python_command('print(1)')).success
@@ -265,9 +266,9 @@ def test_provisioning_lease_is_renewed_over_http(mock_api, monkeypatch, tmp_path
 @pytest.mark.parametrize('phase', ['headers', 'body'])
 def test_request_timeout_interrupts_a_stalled_http_response(phase, mock_api, monkeypatch):
     """Prevent missing socket timeouts from hanging allocation before any response bytes arrive."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'valid-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'valid-token')
     mock_api.stall_response = phase
-    manager = LiquidManager(settings=Settings(api_url=mock_api.url, request_timeout=0.05, retry_attempts=1))
+    manager = MutacompManager(settings=Settings(api_url=mock_api.url, request_timeout=0.05, retry_attempts=1))
     with ThreadPoolExecutor(max_workers=1) as pool:
         allocation = pool.submit(manager.get, b'state')
         try:
