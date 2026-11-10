@@ -11,15 +11,15 @@ from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 
-from liquidcomp.errors import (
+from mutacomp.errors import (
     APIError,
     InvalidTokenError,
     PermissionDeniedError,
     ProtocolError,
     ServerUnavailableError,
 )
-from liquidcomp.protocol import array_value, object_value, text
-from liquidcomp.settings import Settings
+from mutacomp.protocol import array_value, object_value, text
+from mutacomp.settings import Settings
 
 
 def _constant(_value: str) -> NoReturn:
@@ -90,7 +90,7 @@ class API:
                     if status in (408, 425, 429) or status >= 500:
                         raise ServerUnavailableError('The API is temporarily unavailable.', status, key)
                     if not 200 <= status < 300:
-                        raise APIError(f'Liquid API returned HTTP {status}.', status, key)
+                        raise APIError(f'Mutating Compute API returned HTTP {status}.', status, key)
                     limit = self.settings.max_artifact_bytes if raw else self.settings.max_response_bytes
                     data = bytearray()
                     for chunk in response.iter_bytes():

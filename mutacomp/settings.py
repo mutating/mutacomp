@@ -66,7 +66,7 @@ def _size(value: int) -> bool:
 
 
 class Settings(Storage):
-    """Environment LIQUID_* precedes liquid files and [tool.liquid]."""
+    """Environment MUTACOMP_* precedes mutacomp files and [tool.mutacomp]."""
 
     api_url: str = Field('https://api.mutating.tech/v1', validation=_url, hide=True)
     ask_for_token: bool = False
@@ -91,15 +91,15 @@ class Settings(Storage):
     def __init__(self, **values: object) -> None:
         # skelet 0.0.21 cannot parse Union[int, float] from strings. Parse those
         # environment fields through its float source before normal resolution.
-        source = EnvSource[float](prefix='LIQUID_')
+        source = EnvSource[float](prefix='MUTACOMP_')
         numeric = {name: source.type_awared_get(name, float) for name in (
             'cpu', 'ram', 'disk', 'request_timeout', 'poll_interval',
             'operation_timeout', 'cancellation_timeout', 'renew_interval', 'retry_backoff',
         ) if name not in values}
         overrides = MemorySource({name: value for name, value in numeric.items() if value is not None})
-        super().__init__(_sources=[MemorySource(values), overrides, *for_tool('liquid')], **values)
+        super().__init__(_sources=[MemorySource(values), overrides, *for_tool('mutacomp')], **values)
 
 
 def environment_token() -> Optional[str]:
     """Use a fresh skelet environment source, never ordinary configuration files."""
-    return EnvSource[str](prefix='LIQUID_').type_awared_get('token', str)
+    return EnvSource[str](prefix='MUTACOMP_').type_awared_get('token', str)

@@ -5,11 +5,11 @@ from typing import Optional
 from throng.errors import ThrongError
 
 
-class LiquidError(ThrongError):
-    """Base error for Liquid Compute."""
+class MutacompError(ThrongError):
+    """Base error for Mutating Compute."""
 
 
-class APIError(LiquidError):
+class APIError(MutacompError):
     """A sanitized API error, optionally identifying an uncertain operation."""
 
     def __init__(self, message: str, status_code: Optional[int] = None, idempotency_key: Optional[str] = None) -> None:
@@ -30,49 +30,49 @@ class ServerUnavailableError(APIError):
     """The server could not confirm an operation within the retry budget."""
 
 
-class MissingTokenError(LiquidError):
+class MissingTokenError(MutacompError):
     """No credential is available."""
 
 
-class KeyringError(LiquidError):
+class KeyringError(MutacompError):
     """The credential vault could not be read or written."""
 
 
-class AuthenticationCancelledError(LiquidError):
+class AuthenticationCancelledError(MutacompError):
     """The user canceled credential replacement."""
 
 
-class NonInteractiveError(LiquidError):
+class NonInteractiveError(MutacompError):
     """Hidden terminal input is unavailable."""
 
 
-class ProtocolError(LiquidError):
+class ProtocolError(MutacompError):
     """An API response violates the wire contract."""
 
 
-class StateError(LiquidError):
+class StateError(MutacompError):
     """Initial state cannot be safely represented as a tar archive."""
 
 
-class OperationCancelledError(LiquidError):
+class OperationCancelledError(MutacompError):
     """An allocation was canceled before it completed."""
 
 
-class OperationTimeoutError(LiquidError):
+class OperationTimeoutError(MutacompError):
     """A control operation exceeded its wait budget."""
 
 
-class CancellationTimeoutError(LiquidError):
+class CancellationTimeoutError(MutacompError):
     """The API did not confirm a command's cancellation."""
 
 
-class IsolateUnavailableError(LiquidError):
+class IsolateUnavailableError(MutacompError):
     """Provisioning or lease maintenance failed."""
 
 
-class IsolateClosedError(LiquidError):
+class IsolateClosedError(MutacompError):
     """An operation requires a live isolate."""
 
 
-class MetadataError(LiquidError):
+class MetadataError(MutacompError):
     """Performance metadata is unavailable or malformed."""

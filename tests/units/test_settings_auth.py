@@ -11,8 +11,8 @@ import pytest
 from skelet import Storage
 from throng.errors import ThrongError
 
-from liquidcomp import LiquidManager, Settings
-from liquidcomp.errors import (
+from mutacomp import MutacompManager, Settings
+from mutacomp.errors import (
     AuthenticationCancelledError,
     InvalidTokenError,
     KeyringError,
@@ -31,12 +31,12 @@ def test_settings_defaults_and_skelet_sources(tmp_path, monkeypatch):
     assert (defaults.cpu, defaults.ram, defaults.disk, defaults.command_timeout) == (1.0, 0.5, 1.0, 3600)
     assert defaults.api_url == 'https://api.mutating.tech/v1'
     assert defaults.ask_for_token is False
-    (tmp_path / 'pyproject.toml').write_text('[tool.liquid]\ncpu = 2.0\ncommand_timeout = 7200\n')
-    (tmp_path / 'liquid.toml').write_text('cpu = 3.0\n')
+    (tmp_path / 'pyproject.toml').write_text('[tool.mutacomp]\ncpu = 2.0\ncommand_timeout = 7200\n')
+    (tmp_path / 'mutacomp.toml').write_text('cpu = 3.0\n')
     assert Settings().cpu == 3.0
-    monkeypatch.setenv('LIQUID_CPU', '4.0')
+    monkeypatch.setenv('MUTACOMP_CPU', '4.0')
     assert Settings().cpu == 4.0
-    monkeypatch.setenv('LIQUID_CPU', '5.0')
+    monkeypatch.setenv('MUTACOMP_CPU', '5.0')
     assert Settings().cpu == 5.0
     assert Settings(cpu=6.0).cpu == 6.0
 
@@ -58,7 +58,7 @@ def test_settings_reject_invalid_values(field, value):
 
 def test_manager_construction_and_read_do_not_resolve_credentials(clean_environment, tmp_path, api_stub):
     """Installing the plugin cannot prevent other throng managers from being constructed."""
-    manager = LiquidManager(tmp_path)
+    manager = MutacompManager(tmp_path)
     assert manager.read()
     assert not clean_environment.reads
     assert not api_stub.requests
@@ -75,12 +75,12 @@ def test_manager_construction_and_read_do_not_resolve_credentials(clean_environm
 def test_invalid_credential_never_falls_back(case, source, monkeypatch, clean_environment, api_stub):
     """Prevent sending malformed saved tokens or replacing an authoritative invalid credential."""
     value, ask_for_token = case
-    slot = ('liquidcomp:https://api.mutating.tech/v1', 'LIQUID_TOKEN')
+    slot = ('mutacomp:https://api.mutating.tech/v1', 'MUTACOMP_TOKEN')
     clean_environment.values[slot] = value if source == 'keyring' else 'stored-valid'
     if source == 'environment':
-        monkeypatch.setenv('LIQUID_TOKEN', value)
+        monkeypatch.setenv('MUTACOMP_TOKEN', value)
     with pytest.raises(InvalidTokenError):
-        LiquidManager(settings=Settings(ask_for_token=ask_for_token)).get(b'state')
+        MutacompManager(settings=Settings(ask_for_token=ask_for_token)).get(b'state')
     assert clean_environment.reads == ([slot] if source == 'keyring' else [])
     assert not api_stub.requests
 
@@ -88,23 +88,23 @@ def test_invalid_credential_never_falls_back(case, source, monkeypatch, clean_en
 @pytest.mark.parametrize(('status', 'error'), [(401, InvalidTokenError), (403, PermissionDeniedError)])
 def test_rejected_environment_token_is_not_replaced(status, error, monkeypatch, api_stub, clean_environment):
     """A server denial neither reads keyring nor uploads state or prompts."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'rejected')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'rejected')
     api_stub.routes['GET', '/v1/auth/check'] = lambda _request: httpx.Response(status)
     with pytest.raises(error):
-        LiquidManager(settings=Settings(ask_for_token=True)).get(b'state')
+        MutacompManager(settings=Settings(ask_for_token=True)).get(b'state')
     assert not clean_environment.reads
     assert len(api_stub.requests) == 1
 
 
 def test_keyring_credential_is_namespaced_by_server(api_stub, clean_environment):
     """A second API endpoint cannot accidentally use the first endpoint's saved credential."""
-    clean_environment.values['liquidcomp:https://api.mutating.tech/v1', 'LIQUID_TOKEN'] = 'stored'
-    manager = LiquidManager()
+    clean_environment.values['mutacomp:https://api.mutating.tech/v1', 'MUTACOMP_TOKEN'] = 'stored'
+    manager = MutacompManager()
     isolate = manager.get(b'state')
     isolate.kill()
     assert api_stub.requests[0].headers['Authorization'] == 'Bearer stored'
     with pytest.raises(MissingTokenError):
-        LiquidManager(settings=Settings(api_url='http://localhost:1234/v1')).get(b'state')
+        MutacompManager(settings=Settings(api_url='http://localhost:1234/v1')).get(b'state')
 
 
 @pytest.mark.parametrize('location', ['get', 'set'])
@@ -115,11 +115,11 @@ def test_keyring_failure_is_not_treated_as_a_missing_secret(location, monkeypatc
         raise keyring.errors.KeyringError('private backend data')
     if location == 'get':
         monkeypatch.setattr(keyring, 'get_password', fail)
-        action = lambda: LiquidManager(settings=Settings(ask_for_token=True)).get(b'state')
+        action = lambda: MutacompManager(settings=Settings(ask_for_token=True)).get(b'state')
     else:
         monkeypatch.setattr(keyring, 'set_password', fail)
         monkeypatch.setattr(getpass, 'getpass', lambda _prompt: 'new-token')
-        action = LiquidManager().init
+        action = MutacompManager().init
     with pytest.raises(KeyringError) as caught:
         action()
     assert 'private backend data' not in str(caught.value)
@@ -137,8 +137,8 @@ def test_init_retries_empty_and_rejected_values_then_saves_once(api_stub, monkey
         status = {'rejected': 401, 'limited': 403}.get(token, 200)
         return httpx.Response(status, json={'valid': True, 'scopes': ['read', 'execute']})
     api_stub.routes['GET', '/v1/auth/check'] = check
-    LiquidManager().init()
-    assert clean_environment.writes == [('liquidcomp:https://api.mutating.tech/v1', 'LIQUID_TOKEN', 'accepted')]
+    MutacompManager().init()
+    assert clean_environment.writes == [('mutacomp:https://api.mutating.tech/v1', 'MUTACOMP_TOKEN', 'accepted')]
     assert len(api_stub.clients) == 3
     assert all(client.is_closed for client in api_stub.clients)
     text = capsys.readouterr().out
@@ -152,15 +152,15 @@ def test_init_retries_empty_and_rejected_values_then_saves_once(api_stub, monkey
 @pytest.mark.usefixtures('terminal', 'api_stub')
 def test_existing_credential_notice_and_cancellation_leave_secret_intact(source, interruption, monkeypatch, clean_environment, capsys):
     """Explicit init offers replacement while cancellation keeps the original credential."""
-    slot = ('liquidcomp:https://api.mutating.tech/v1', 'LIQUID_TOKEN')
+    slot = ('mutacomp:https://api.mutating.tech/v1', 'MUTACOMP_TOKEN')
     clean_environment.values[slot] = 'stored-old'
     if source == 'environment':
-        monkeypatch.setenv('LIQUID_TOKEN', 'environment-old')
+        monkeypatch.setenv('MUTACOMP_TOKEN', 'environment-old')
     def abort(_prompt):
         raise interruption
     monkeypatch.setattr(getpass, 'getpass', abort)
     with pytest.raises(AuthenticationCancelledError):
-        LiquidManager().init()
+        MutacompManager().init()
     assert clean_environment.values[slot] == 'stored-old'
     assert not clean_environment.writes
     text = capsys.readouterr().out
@@ -173,15 +173,15 @@ def test_existing_credential_notice_and_cancellation_leave_secret_intact(source,
 @pytest.mark.usefixtures('terminal')
 def test_init_overwrites_keyring_but_environment_stays_authoritative(api_stub, monkeypatch, clean_environment, capsys):
     """Replacing the saved token does not override the process environment."""
-    monkeypatch.setenv('LIQUID_TOKEN', 'environment-token')
+    monkeypatch.setenv('MUTACOMP_TOKEN', 'environment-token')
     monkeypatch.setattr(getpass, 'getpass', lambda _prompt: 'stored-new')
-    manager = LiquidManager()
+    manager = MutacompManager()
     manager.init()
     isolate = manager.get(b'state')
     isolate.kill()
     assert clean_environment.writes[-1][2] == 'stored-new'
     assert all(r.headers['Authorization'] == 'Bearer environment-token' for r in api_stub.requests[1:])
-    assert 'LIQUID_TOKEN' in capsys.readouterr().out
+    assert 'MUTACOMP_TOKEN' in capsys.readouterr().out
 
 
 @pytest.mark.usefixtures('terminal', 'api_stub')
@@ -189,12 +189,12 @@ def test_automatic_prompt_calls_manager_init(monkeypatch, clean_environment):
     """The automatic and explicit CLI paths share the manager's one dialog entrypoint."""
     monkeypatch.setattr(getpass, 'getpass', lambda _prompt: 'new-token')
     calls = []
-    original = LiquidManager.init
+    original = MutacompManager.init
     def init(self):
         calls.append(self)
         original(self)
-    monkeypatch.setattr(LiquidManager, 'init', init)
-    manager = LiquidManager(settings=Settings(ask_for_token=True))
+    monkeypatch.setattr(MutacompManager, 'init', init)
+    manager = MutacompManager(settings=Settings(ask_for_token=True))
     isolate = manager.get(b'state')
     isolate.kill()
     assert calls == [manager]
@@ -213,7 +213,7 @@ def test_init_refuses_any_echoing_fallback(mode, monkeypatch):
             return 'secret'
         monkeypatch.setattr(getpass, 'getpass', warn)
     with pytest.raises(NonInteractiveError):
-        LiquidManager().init()
+        MutacompManager().init()
 
 
 @pytest.mark.parametrize('failure', ['network', 'unavailable', 'malformed', 'wrong_scopes', 'deep_json', 'interrupted'])
@@ -235,7 +235,7 @@ def test_init_does_not_save_or_thank_on_unconfirmed_validation(failure, api_stub
         return httpx.Response(200, content=b'invalid json')
     api_stub.routes['GET', '/v1/auth/check'] = check
     with pytest.raises(KeyboardInterrupt if failure == 'interrupted' else (ServerUnavailableError, ProtocolError)):
-        LiquidManager(settings=Settings(retry_backoff=0.0)).init()
+        MutacompManager(settings=Settings(retry_backoff=0.0)).init()
     assert len(api_stub.clients) == 1
     assert api_stub.clients[0].is_closed
     assert not clean_environment.writes
@@ -245,14 +245,14 @@ def test_init_does_not_save_or_thank_on_unconfirmed_validation(failure, api_stub
 @pytest.mark.usefixtures('api_stub')
 def test_token_is_never_loaded_from_ordinary_config_files(tmp_path):
     """Token acquisition remains env then keyring even when ordinary settings contain a token key."""
-    (tmp_path / 'liquid.json').write_text(json.dumps({'token': 'config-secret'}))
+    (tmp_path / 'mutacomp.json').write_text(json.dumps({'token': 'config-secret'}))
     with pytest.raises(MissingTokenError):
-        LiquidManager().get(b'state')
+        MutacompManager().get(b'state')
 
 
 def test_status_reports_missing_credentials_without_prompt(api_stub):
     """Status probes the server even when authentication has not been configured."""
-    status = LiquidManager(settings=Settings(ask_for_token=True)).status()
+    status = MutacompManager(settings=Settings(ask_for_token=True)).status()
     assert status.server_connected
     assert status.server_ready
     assert not status.token_available
@@ -293,10 +293,10 @@ def test_numeric_settings_accept_integer_and_fractional_values(source, tmp_path,
     values = {'cpu': 2, 'ram': 1, 'disk': 3, 'request_timeout': 5, 'renew_interval': 20}
     if source == 'environment':
         for name, value in values.items():
-            monkeypatch.setenv('LIQUID_' + name.upper(), str(value))
+            monkeypatch.setenv('MUTACOMP_' + name.upper(), str(value))
         settings = Settings()
     elif source == 'file':
-        (tmp_path / 'liquid.json').write_text(json.dumps(values))
+        (tmp_path / 'mutacomp.json').write_text(json.dumps(values))
         settings = Settings()
     else:
         settings = Settings(**values)
@@ -319,7 +319,7 @@ def test_status_reports_health_transport_and_protocol_errors(health, authenticat
             raise httpx.ConnectError('private details', request=request)
         api_stub.routes['GET', '/v1/auth/check'] = unavailable
     elif authentication == 'absent':
-        monkeypatch.delenv('LIQUID_TOKEN')
+        monkeypatch.delenv('MUTACOMP_TOKEN')
     status = configured.status()
     assert status.server_ready is False
     assert status.server_connected is (health != 'network' or authentication == 'accepted')
@@ -332,9 +332,9 @@ def test_status_reports_health_transport_and_protocol_errors(health, authenticat
 @pytest.mark.parametrize('failure', ['network', 'protocol', 'missing_endpoint', 'bad_token', 'keyring'])
 def test_status_reports_unknown_auth_validity_separately(failure, configured, api_stub, monkeypatch):
     if failure == 'bad_token':
-        monkeypatch.setenv('LIQUID_TOKEN', '')
+        monkeypatch.setenv('MUTACOMP_TOKEN', '')
     elif failure == 'keyring':
-        monkeypatch.delenv('LIQUID_TOKEN')
+        monkeypatch.delenv('MUTACOMP_TOKEN')
         def locked(_service, _username):
             raise OSError('private vault details')
         monkeypatch.setattr(keyring, 'get_password', locked)
@@ -381,7 +381,7 @@ def test_huge_numeric_configuration_has_a_validation_error(field):
 ])
 def test_explicit_settings_override_invalid_environment(field, bad, value, monkeypatch):
     """An unused lower-priority value cannot break an explicit valid setting."""
-    monkeypatch.setenv('LIQUID_' + field.upper(), bad)
+    monkeypatch.setenv('MUTACOMP_' + field.upper(), bad)
     assert getattr(Settings(**{field: value}), field) == value
 
 
@@ -389,5 +389,5 @@ def test_explicit_settings_override_invalid_environment(field, bad, value, monke
     ('cpu', 'wrong', 2), ('command_timeout', -1, 2), ('env', {'bad=name': 'x'}, {}),
 ])
 def test_explicit_settings_override_invalid_file_value(field, bad, value, tmp_path):
-    (tmp_path / 'liquid.json').write_text(json.dumps({field: bad}))
+    (tmp_path / 'mutacomp.json').write_text(json.dumps({field: bad}))
     assert getattr(Settings(**{field: value}), field) == value

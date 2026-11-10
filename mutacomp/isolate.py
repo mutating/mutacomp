@@ -17,18 +17,18 @@ from throng.abstracts.meta import (
 )
 from throng.errors import CannotInstallDependencyError, InterruptedInstallationError
 
-from liquidcomp.api import API, Reply
-from liquidcomp.errors import (
+from mutacomp.api import API, Reply
+from mutacomp.errors import (
     CancellationTimeoutError,
     IsolateClosedError,
     IsolateUnavailableError,
-    LiquidError,
     MetadataError,
+    MutacompError,
     OperationTimeoutError,
     ProtocolError,
 )
-from liquidcomp.models import LiquidResult
-from liquidcomp.protocol import (
+from mutacomp.models import MutacompResult
+from mutacomp.protocol import (
     identifier,
     number,
     object_value,
@@ -64,7 +64,7 @@ class _Lease:
         if self.deadline <= time.monotonic():
             raise IsolateUnavailableError('The API returned an expired isolate lease.')
         self.renew_at = time.monotonic() + min(float(api.settings.renew_interval), (self.deadline - time.monotonic()) / 3)
-        self.thread = threading.Thread(target=self._run, name='liquid-lease-' + isolate_id, daemon=True)
+        self.thread = threading.Thread(target=self._run, name='mutacomp-lease-' + isolate_id, daemon=True)
 
     def start(self) -> None:
         self.thread.start()
@@ -125,7 +125,7 @@ class _Lease:
                         pending.cancel_deadline = time.monotonic() + self.api.settings.cancellation_timeout
                     try:
                         self.api.request('POST', 'commands/cancel', payload={'ids': [pending.identifier]})
-                    except LiquidError:
+                    except MutacompError:
                         with self.lock:
                             # A completed command no longer owns cancellation errors.
                             if self.pending is pending:
@@ -134,7 +134,7 @@ class _Lease:
             self.fail(error)
 
 
-class LiquidIsolate(AbstractIsolate):
+class MutacompIsolate(AbstractIsolate):
     def __init__(self, api: API, isolate_id: str, computer_id: str, lease: _Lease) -> None:
         self._closed = True
         self._state_lock = threading.Lock()
@@ -155,14 +155,15 @@ class LiquidIsolate(AbstractIsolate):
     def _check_alive(self) -> None:
         with self._state_lock:
             if self._closed:
-                raise IsolateClosedError('The Liquid isolate has been closed.')
+                raise IsolateClosedError('The Mutating Compute isolate has been closed.')
         self._lease.check()
 
     def get_id(self) -> str:
-        return 'liquid:' + self._api.base_url + ':' + self._id
+        return 'mutacomp:' + self._api.base_url + ':' + self._id
 
     def get_resources_description(self) -> IsolateResourcesDescription:
-        return IsolateResourcesDescription(shared=True, shared_with=None)
+        # The API does not expose the neighbors sharing this computer, and the runtime has network access.
+        return IsolateResourcesDescription(shared=True, shared_with=None, internet=True)
 
     def kill(self) -> None:
         with self._kill_lock:
@@ -177,13 +178,13 @@ class LiquidIsolate(AbstractIsolate):
                 with self._operations:
                     self._api.close()
 
-    def _run(self, command: str, token: AbstractToken = DefaultToken()) -> LiquidResult:  # noqa: B008
+    def _run(self, command: str, token: AbstractToken = DefaultToken()) -> MutacompResult:  # noqa: B008
         with self._operations:
             self._check_alive()
             if not isinstance(command, str) or not command.strip() or len(command) > 65536 or '\0' in command:
                 raise ValueError('Command must be nonempty text of at most 65536 characters without NUL.')
             if not token:
-                return LiquidResult(success=False, killed_by_token=True)
+                return MutacompResult(success=False, killed_by_token=True)
             settings = self._api.settings
             command_id: Optional[str] = None
             try:
@@ -224,7 +225,7 @@ class LiquidIsolate(AbstractIsolate):
                 self._lease.set_pending(None)
             return self._result(command_id, status, result_payload, pending)
 
-    def _result(self, command_id: str, status: str, payload: Dict[str, object], pending: _Pending) -> LiquidResult:
+    def _result(self, command_id: str, status: str, payload: Dict[str, object], pending: _Pending) -> MutacompResult:
         if type(payload.get('success')) is not bool:
             raise ProtocolError('Invalid command result success flag.')
         code = payload.get('returncode')
@@ -244,7 +245,7 @@ class LiquidIsolate(AbstractIsolate):
         if stderr_id is not None:
             error_bytes = self._api.download('artifacts/' + identifier(stderr_id) + '/content')
             stderr = error_bytes.decode('utf-8', 'replace')
-        return LiquidResult(
+        return MutacompResult(
             success=payload['success'] is True, returncode=code, stdout=stdout, stderr=stderr,
             id=command_id, status=status, error=optional_text(payload.get('error')),
             killed_by_token=pending.cancelled_by_token and status in ('cancelled', 'timed_out'),
@@ -304,13 +305,24 @@ class LiquidIsolate(AbstractIsolate):
                         raise ProtocolError('Invalid benchmark version.') from None
                     versions.add(version)
                     name = text(row.get('benchmark_name'))
-                    measurement = BenchmarkResult(number=number(row.get('number')), when=when(row.get('created_at')), benchmarker_version=version)
+                    measurement = BenchmarkResult(
+                        number=number(row.get('number')),
+                        when=when(row.get('created_at')),
+                        benchmarker_version=version,
+                        # The API does not expose a Raspberry Pi 5 reference ratio yet.
+                        equivalent=None,
+                    )
                     if name in ('single_core', 'multi_core'):
                         if name in known:
                             raise ProtocolError('Duplicate benchmark measurement.')
                         known[name] = measurement
                 if len(versions) > 1:
                     raise ProtocolError('Latest benchmark results mix different versions.')
-                return Benchmarks(single_core=known.get('single_core'), multi_core=known.get('multi_core'))
-            except LiquidError as error:
+                return Benchmarks(
+                    single_core=known.get('single_core'),
+                    multi_core=known.get('multi_core'),
+                    # Nothing can be aggregated while per-benchmark equivalents are absent.
+                    equivalent=None,
+                )
+            except MutacompError as error:
                 raise MetadataError('Could not retrieve valid benchmark metadata.') from error

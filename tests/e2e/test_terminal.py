@@ -19,7 +19,7 @@ class Terminal:
     def __init__(self, environment):
         self.master, self.slave = pty.openpty()
         self.process = subprocess.Popen(
-            [sys.executable, '-m', 'liquidcomp', 'init'], env=environment,
+            [sys.executable, '-m', 'mutacomp', 'init'], env=environment,
             stdin=self.slave, stdout=self.slave, stderr=self.slave,
         )
         self.output = b''
@@ -61,7 +61,7 @@ def test_cli_terminal_retries_and_persists_only_accepted_token(cli_environment):
     terminal = Terminal(cli_environment)
     try:
         for value in (b'\n', b' \n', b'rejected-secret\n', b'new-token\n'):
-            terminal.expect(b'Liquid API token (Ctrl+C to cancel): ')
+            terminal.expect(b'Mutating Compute API token (Ctrl+C to cancel): ')
             terminal.send(value)
         assert terminal.finish() == 0
         assert terminal.output.count(b'Token is empty') == 2
@@ -69,7 +69,7 @@ def test_cli_terminal_retries_and_persists_only_accepted_token(cli_environment):
         assert terminal.output.count(b'Thank you') == 1
         assert b'rejected-secret' not in terminal.output
         assert b'new-token' not in terminal.output
-        saved = json.loads(Path(cli_environment['LIQUID_TEST_KEYRING']).read_text())
+        saved = json.loads(Path(cli_environment['MUTACOMP_TEST_KEYRING']).read_text())
         assert list(saved.values()) == ['new-token']
     finally:
         terminal.close()
@@ -78,12 +78,12 @@ def test_cli_terminal_retries_and_persists_only_accepted_token(cli_environment):
 @pytest.mark.parametrize('interruption', ['interrupt', 'eof'])
 def test_cli_terminal_cancellation_preserves_existing_token(cli_environment, interruption):
     """Both Ctrl+C and EOF restore echo, keep the old secret, and use exit status 130."""
-    vault = Path(cli_environment['LIQUID_TEST_KEYRING'])
-    previous = {'liquidcomp:' + cli_environment['LIQUID_API_URL'] + '\0LIQUID_TOKEN': 'old-secret'}
+    vault = Path(cli_environment['MUTACOMP_TEST_KEYRING'])
+    previous = {'mutacomp:' + cli_environment['MUTACOMP_API_URL'] + '\0MUTACOMP_TOKEN': 'old-secret'}
     vault.write_text(json.dumps(previous))
     terminal = Terminal(cli_environment)
     try:
-        terminal.expect(b'Liquid API token (Ctrl+C to cancel): ')
+        terminal.expect(b'Mutating Compute API token (Ctrl+C to cancel): ')
         if interruption == 'interrupt':
             terminal.process.send_signal(signal.SIGINT)
         else:

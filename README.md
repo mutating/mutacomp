@@ -1,23 +1,23 @@
-# liquidcomp
+# mutacomp
 
-Run [throng](https://github.com/mutating/throng) commands on your Liquid Compute fleet. Personal and organization tokens use the same API; the server determines which computers are available to each token.
+Run [throng](https://github.com/mutating/throng) commands on your Mutating Compute fleet. Personal and organization tokens use the same API; the server determines which computers are available to each token.
 
-Requires Python 3.8+ and throng 0.0.10+. The remote platform is fixed to `linux / arm64 / powercell-ubuntu-arm64-v1`.
+Requires Python 3.8+ and throng 0.0.11+. The remote platform is fixed to `linux / arm64 / powercell-ubuntu-arm64-v1`.
 
 ## Installation and usage
 
 ```sh
-pip install liquidcomp
-liquid init
-liquid status
+pip install mutacomp
+mutacomp init
+mutacomp status
 ```
 
-Installing the package automatically registers the `liquid` throng plugin:
+Installing the package automatically registers the `mutacomp` throng plugin:
 
 ```python
 from throng import throng
 
-manager = throng['liquid'].one('./project')
+manager = throng['mutacomp'].one('./project')
 result = manager.run('python3 task.py')
 print(result.stdout)
 
@@ -35,9 +35,9 @@ For explicit settings:
 
 ```python
 from cantok import TimeoutToken
-from liquidcomp import LiquidManager, Settings
+from mutacomp import MutacompManager, Settings
 
-manager = LiquidManager(
+manager = MutacompManager(
     './project',
     exclude=['.git/', 'venv/', '*.secret'],
     settings=Settings(cpu=2, ram=1, disk=2, command_timeout=7200),
@@ -46,7 +46,7 @@ with manager.scope as isolate:
     result = isolate.run('python3 task.py', token=TimeoutToken(30))
 ```
 
-`LiquidResult` extends throng's result with `id`, `status`, `error`, and `killed_by_token`. A known command failure returns an unsuccessful result unless `exception=True` (or another throng exception policy) is supplied. Infrastructure, authentication, and protocol failures raise exceptions. Full log artifacts replace inline previews; binary artifacts are also available as `stdout_bytes` / `stderr_bytes`, with UTF-8 replacement decoding in the corresponding text fields.
+`MutacompResult` extends throng's result with `id`, `status`, `error`, and `killed_by_token`. A known command failure returns an unsuccessful result unless `exception=True` (or another throng exception policy) is supplied. Infrastructure, authentication, and protocol failures raise exceptions. Full log artifacts replace inline previews; binary artifacts are also available as `stdout_bytes` / `stderr_bytes`, with UTF-8 replacement decoding in the corresponding text fields.
 
 ## Credentials
 
@@ -54,11 +54,11 @@ Credentials are resolved and checked through `GET /v1/auth/check` when an isolat
 
 Resolution order:
 
-1. `LIQUID_TOKEN` from the process environment, including an explicitly empty value.
-2. The keyring secret with username `LIQUID_TOKEN` and service `liquidcomp:<api_url without trailing slashes>`.
+1. `MUTACOMP_TOKEN` from the process environment, including an explicitly empty value.
+2. The keyring secret with username `MUTACOMP_TOKEN` and service `mutacomp:<api_url without trailing slashes>`.
 3. If absent, `MissingTokenError` by default. With `ask_for_token=true`, allocation calls the manager's `init()` method to open the shared dialog.
 
-An empty, malformed, expired, revoked, or insufficiently privileged environment token causes an error. It never falls back to keyring or prompts. A saved but rejected token also causes an error; explicit `liquid init` replaces it. Token text is never read from configuration files or passed as a CLI argument.
+An empty, malformed, expired, revoked, or insufficiently privileged environment token causes an error. It never falls back to keyring or prompts. A saved but rejected token also causes an error; explicit `mutacomp init` replaces it. Token text is never read from configuration files or passed as a CLI argument.
 
 Both `read` and `execute` permissions are required. The plugin treats the token as opaque and does not select a personal or organization authentication mode. A successful check confirms authorization, not available fleet capacity.
 
@@ -66,15 +66,15 @@ Keyring uses the installed operating-system backend. Backend read/write failures
 
 ## CLI
 
-### `liquid init`
+### `mutacomp init`
 
-Always offers to enter a new token, including when a token already exists. The existing source is reported without revealing its value; Ctrl+C or EOF cancels with exit status **130** and preserves the saved secret. The same dialog is available as `LiquidManager.init()`.
+Always offers to enter a new token, including when a token already exists. The existing source is reported without revealing its value; Ctrl+C or EOF cancels with exit status **130** and preserves the saved secret. The same dialog is available as `MutacompManager.init()`.
 
 Input is hidden and requires a terminal. Empty or whitespace-only input retries. A token rejected by the server (401/403) retries. A token is saved to keyring, and the user is thanked, only after the API confirms `read` and `execute`. Network or protocol failures leave the previous secret unchanged. A keyring write failure is reported without printing success. Echoed fallback input is disabled; piped stdin is rejected.
 
-If `LIQUID_TOKEN` is present, initialization explains that it retains priority. The newly saved keyring token takes effect after that variable is removed.
+If `MUTACOMP_TOKEN` is present, initialization explains that it retains priority. The newly saved keyring token takes effect after that variable is removed.
 
-### `liquid status`
+### `mutacomp status`
 
 Checks server connectivity/readiness and token availability/validity without prompting or creating an isolate. Prints the credential source, never its value. Uses the origin's unauthenticated `/health/ready` endpoint and the configured `/v1/auth/check` endpoint.
 
@@ -84,12 +84,12 @@ The corresponding programmatic method `manager.status()` returns a `Status` valu
 
 ## Configuration
 
-All ordinary settings are read through [skelet](https://github.com/mutating/skelet). Each new settings object reads fresh sources. Explicit `Settings(...)` arguments override loaded values. The environment takes precedence over files; file lookup follows skelet's `for_tool('liquid')` order: `liquid.toml`, `.liquid.toml`, `[tool.liquid]` in `pyproject.toml`, then the equivalent YAML and JSON sources in the current working directory.
+All ordinary settings are read through [skelet](https://github.com/mutating/skelet). Each new settings object reads fresh sources. Explicit `Settings(...)` arguments override loaded values. The environment takes precedence over files; file lookup follows skelet's `for_tool('mutacomp')` order: `mutacomp.toml`, `.mutacomp.toml`, `[tool.mutacomp]` in `pyproject.toml`, then the equivalent YAML and JSON sources in the current working directory.
 
 For example, in `pyproject.toml`:
 
 ```toml
-[tool.liquid]
+[tool.mutacomp]
 cpu = 2
 ram = 1
 disk = 2
@@ -97,33 +97,33 @@ command_timeout = 7200
 ask_for_token = false
 ```
 
-Or use environment variables such as `LIQUID_CPU=2`, `LIQUID_COMMAND_TIMEOUT=7200`, and `LIQUID_ASK_FOR_TOKEN=true`. Dictionary values in the environment use JSON, for example `LIQUID_ENV='{"LANG":"C.UTF-8"}'`.
+Or use environment variables such as `MUTACOMP_CPU=2`, `MUTACOMP_COMMAND_TIMEOUT=7200`, and `MUTACOMP_ASK_FOR_TOKEN=true`. Dictionary values in the environment use JSON, for example `MUTACOMP_ENV='{"LANG":"C.UTF-8"}'`.
 
 | Setting | Environment variable | Default | Meaning / allowed values |
 | --- | --- | --- | --- |
-| `api_url` | `LIQUID_API_URL` | `https://api.mutating.tech/v1` | API base URL; HTTP(S), no credentials, query, or fragment. Include `/v1`. |
-| `ask_for_token` | `LIQUID_ASK_FOR_TOKEN` | `false` | Open `manager.init()` when no credential exists. |
-| `image` | `LIQUID_IMAGE` | `ubuntu` | Image supported by the fixed runtime; the server validates supported references. |
-| `cpu` | `LIQUID_CPU` | `1` | vCPUs, converted to integer millicores; at least 1 millicore, at most 1000 vCPUs. |
-| `ram` | `LIQUID_RAM` | `0.5` | GiB, converted to integer bytes; 1 byte through 1 EiB. |
-| `disk` | `LIQUID_DISK` | `1` | GiB, converted to integer bytes; 1 byte through 1 EiB. |
-| `command_timeout` | `LIQUID_COMMAND_TIMEOUT` | `3600` | Integer seconds, 1–86400 (24 hours); sent for every command. |
-| `shell` | `LIQUID_SHELL` | `false` | Enable the remote Linux shell; otherwise commands use argument parsing. |
-| `cwd` | `LIQUID_CWD` | `.` | Command directory relative to the uploaded tree; at most 1024 characters, no traversal. |
-| `env` | `LIQUID_ENV` | `{}` | Command environment overrides; at most 100 string pairs, names ≤200 characters and values ≤8192. |
-| `request_timeout` | `LIQUID_REQUEST_TIMEOUT` | `10` | HTTP connect/read/write/pool timeout and per-attempt response read budget, seconds. |
-| `poll_interval` | `LIQUID_POLL_INTERVAL` | `0.2` | Seconds between result/control polls and cancellation-token checks. |
-| `operation_timeout` | `LIQUID_OPERATION_TIMEOUT` | `300` | Wait budget for provisioning or snapshot completion, seconds. |
-| `cancellation_timeout` | `LIQUID_CANCELLATION_TIMEOUT` | `40` | Wait budget for a terminal result after cancellation is requested, seconds. |
-| `renew_interval` | `LIQUID_RENEW_INTERVAL` | `60` | Maximum interval between lease renewals, seconds; shortened according to the server's lease. |
-| `retry_attempts` | `LIQUID_RETRY_ATTEMPTS` | `3` | Total attempts per retryable request, 1–10. |
-| `retry_backoff` | `LIQUID_RETRY_BACKOFF` | `0.1` | Initial exponential retry delay, 0–10 seconds, capped by `request_timeout`. |
-| `max_artifact_bytes` | `LIQUID_MAX_ARTIFACT_BYTES` | `104857600` | Positive limit for state uploads and artifact downloads, including tar overhead. |
-| `max_response_bytes` | `LIQUID_MAX_RESPONSE_BYTES` | `16777216` | Positive limit for a JSON/control response. |
+| `api_url` | `MUTACOMP_API_URL` | `https://api.mutating.tech/v1` | API base URL; HTTP(S), no credentials, query, or fragment. Include `/v1`. |
+| `ask_for_token` | `MUTACOMP_ASK_FOR_TOKEN` | `false` | Open `manager.init()` when no credential exists. |
+| `image` | `MUTACOMP_IMAGE` | `ubuntu` | Image supported by the fixed runtime; the server validates supported references. |
+| `cpu` | `MUTACOMP_CPU` | `1` | vCPUs, converted to integer millicores; at least 1 millicore, at most 1000 vCPUs. |
+| `ram` | `MUTACOMP_RAM` | `0.5` | GiB, converted to integer bytes; 1 byte through 1 EiB. |
+| `disk` | `MUTACOMP_DISK` | `1` | GiB, converted to integer bytes; 1 byte through 1 EiB. |
+| `command_timeout` | `MUTACOMP_COMMAND_TIMEOUT` | `3600` | Integer seconds, 1–86400 (24 hours); sent for every command. |
+| `shell` | `MUTACOMP_SHELL` | `false` | Enable the remote Linux shell; otherwise commands use argument parsing. |
+| `cwd` | `MUTACOMP_CWD` | `.` | Command directory relative to the uploaded tree; at most 1024 characters, no traversal. |
+| `env` | `MUTACOMP_ENV` | `{}` | Command environment overrides; at most 100 string pairs, names ≤200 characters and values ≤8192. |
+| `request_timeout` | `MUTACOMP_REQUEST_TIMEOUT` | `10` | HTTP connect/read/write/pool timeout and per-attempt response read budget, seconds. |
+| `poll_interval` | `MUTACOMP_POLL_INTERVAL` | `0.2` | Seconds between result/control polls and cancellation-token checks. |
+| `operation_timeout` | `MUTACOMP_OPERATION_TIMEOUT` | `300` | Wait budget for provisioning or snapshot completion, seconds. |
+| `cancellation_timeout` | `MUTACOMP_CANCELLATION_TIMEOUT` | `40` | Wait budget for a terminal result after cancellation is requested, seconds. |
+| `renew_interval` | `MUTACOMP_RENEW_INTERVAL` | `60` | Maximum interval between lease renewals, seconds; shortened according to the server's lease. |
+| `retry_attempts` | `MUTACOMP_RETRY_ATTEMPTS` | `3` | Total attempts per retryable request, 1–10. |
+| `retry_backoff` | `MUTACOMP_RETRY_BACKOFF` | `0.1` | Initial exponential retry delay, 0–10 seconds, capped by `request_timeout`. |
+| `max_artifact_bytes` | `MUTACOMP_MAX_ARTIFACT_BYTES` | `104857600` | Positive limit for state uploads and artifact downloads, including tar overhead. |
+| `max_response_bytes` | `MUTACOMP_MAX_RESPONSE_BYTES` | `16777216` | Positive limit for a JSON/control response. |
 
 All timing settings other than the separately constrained command timeout and retry backoff accept finite positive values up to 86400 seconds. CPU, RAM, disk, and timing values accept integers and fractions. Polling pauses respect provisioning, snapshot, and cancellation budgets even when `poll_interval` is longer. HTTP attempts and retries can extend the time before a control timeout is reported; configure the transport budget alongside control budgets. Configuration is validated on construction/assignment. Avoid mutating settings during active operations.
 
-OS, architecture, and runtime have no settings and cannot be overridden. Keyring service naming and backend selection are separate from ordinary settings; standard keyring configuration selects the backend. `LIQUID_TOKEN` is read through a dedicated skelet environment source and is never included in ordinary `Settings`.
+OS, architecture, and runtime have no settings and cannot be overridden. Keyring service naming and backend selection are separate from ordinary settings; standard keyring configuration selects the backend. `MUTACOMP_TOKEN` is read through a dedicated skelet environment source and is never included in ordinary `Settings`.
 
 ## Benchmark metadata
 
@@ -134,9 +134,10 @@ with manager.scope as isolate:
     single = meta.resources.benchmarks.single_core
     if single is not None:
         print(single.number, single.when, single.benchmarker_version)
+        print(single.equivalent)  # None until the API reports it
 ```
 
-The plugin requests `/v1/computers/{computer_id}/benchmark-results?latest_only=true` for the allocated computer. It maps `single_core` and `multi_core` to throng's benchset results. Scores describe the whole computer and are not rescaled to the isolate's resource reservation. `shared=True`; `shared_with=None` because the API does not report the current sharing count.
+The plugin requests `/v1/computers/{computer_id}/benchmark-results?latest_only=true` for the allocated computer. It maps `single_core` and `multi_core` to throng's benchset results. Scores describe the whole computer and are not rescaled to the isolate's resource reservation. `shared=True`; `shared_with=None` because the API does not report the current sharing count. `internet=True` because the runtime supports package installation and remote commands with network access. The per-benchmark and aggregate `equivalent` fields are `None` because the API does not yet report a Raspberry Pi 5 reference ratio; they will be populated once the backend exposes it.
 
 An empty suite or an absent individual measurement becomes `None`. Only the greatest benchset version is used; within that version, the API returns the latest measurement of each benchmark. An older version is never substituted for a missing measurement. Unknown future benchmark names are ignored. Each access fetches fresh metadata. `when` is the latest result's timezone-aware `created_at`, normalized to UTC with microsecond precision. A new run of the same benchmark/version provides a new date; replaying the same run preserves its date. This requires the API's benchmark run history support. The date records when the server first stored that run, which can differ from when the agent executed it if uploading was delayed.
 
@@ -144,7 +145,7 @@ Permission, network, HTTP, and malformed-data failures raise `MetadataError`, ra
 
 ## Edge cases and failure behavior
 
-- Credentials are checked before uploading state or reserving resources. Missing credentials raise `MissingTokenError`, a subclass of `ThrongError` through `LiquidError`. Other plugin errors are also derived from `LiquidError`; HTTP errors include sanitized status information without response bodies or credentials.
+- Credentials are checked before uploading state or reserving resources. Missing credentials raise `MissingTokenError`, a subclass of `ThrongError` through `MutacompError`. Other plugin errors are also derived from `MutacompError`; HTTP errors include sanitized status information without response bodies or credentials.
 - An explicit environment token has unconditional priority, even if empty or invalid. Initialization never overwrites the environment. A locked/unavailable keyring is an error, not an empty vault.
 - Token validation can succeed just before revocation or a permissions change. Later API denials are propagated; no automatic credential replacement occurs. The server controls the token's fleet scope.
 - Isolates renew their leases in one background worker throughout provisioning and execution, including while idle or downloading/polling. Renewal deadlines are independent of result polling. A lost or expired lease fails waiting operations. Automatic execution retry on another computer is disabled (`retry_allowed=false`).
@@ -168,8 +169,8 @@ Permission, network, HTTP, and malformed-data failures raise `MetadataError`, ra
 uv venv --python 3.12 venv
 uv pip install --python venv/bin/python -r requirements_dev.txt -e .
 venv/bin/python -m pytest tests
-venv/bin/ruff check liquidcomp tests
-venv/bin/mypy --strict liquidcomp
+venv/bin/ruff check mutacomp tests
+venv/bin/mypy --strict mutacomp
 ```
 
 Tests are written before implementation. Unit tests cover credential priority, every dialog outcome, configuration, protocol boundaries, cancellation, lease maintenance, state transfer, metadata, and cleanup. E2E tests use an independent local HTTP server, real subprocess commands, and a test-only keyring. Unix terminal tests verify hidden input and cancellation with a real pseudo-terminal. They are skipped where PTYs are unavailable. Tests never contact a production API or access the operating-system vault.

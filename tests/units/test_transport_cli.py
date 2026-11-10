@@ -8,15 +8,15 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from liquidcomp import LiquidManager, api as api_module
-from liquidcomp.cli import main
-from liquidcomp.errors import (
+from mutacomp import MutacompManager, api as api_module
+from mutacomp.cli import main
+from mutacomp.errors import (
     APIError,
     AuthenticationCancelledError,
     ProtocolError,
     ServerUnavailableError,
 )
-from liquidcomp.models import Status
+from mutacomp.models import Status
 
 
 @pytest.mark.parametrize('failure', ['connection', 408, 425, 429, 503])
@@ -92,8 +92,8 @@ def test_cli_calls_the_manager_method(command, monkeypatch, capsys):
     def status(_self):
         calls.append('status')
         return Status(True, True, True, True, 'environment')
-    monkeypatch.setattr(LiquidManager, 'init', init)
-    monkeypatch.setattr(LiquidManager, 'status', status)
+    monkeypatch.setattr(MutacompManager, 'init', init)
+    monkeypatch.setattr(MutacompManager, 'status', status)
     assert main([command]) == 0
     assert calls == [command]
     if command == 'status':
@@ -162,7 +162,7 @@ def test_stream_response_has_a_total_read_budget(dribble, configured, api_stub, 
 def test_cli_status_reports_uncertainty_and_errors(status, expected, monkeypatch, capsys):
     """Prevent a reachable but unready server from producing a successful CLI status."""
     connected, valid, error = status
-    monkeypatch.setattr(LiquidManager, 'status', lambda _self: Status(connected, False, True, valid, 'keyring', error))
+    monkeypatch.setattr(MutacompManager, 'status', lambda _self: Status(connected, False, True, valid, 'keyring', error))
     assert main(['status']) == 1
     output = capsys.readouterr().out
     assert f'Token: {expected} (keyring)' in output.splitlines()
@@ -175,13 +175,13 @@ def test_cli_status_reports_uncertainty_and_errors(status, expected, monkeypatch
 def test_cli_cancellation_is_concise(monkeypatch, capsys):
     def abort(_self):
         raise AuthenticationCancelledError('cancelled')
-    monkeypatch.setattr(LiquidManager, 'init', abort)
+    monkeypatch.setattr(MutacompManager, 'init', abort)
     assert main(['init']) == 130
     assert capsys.readouterr().err == 'Initialization cancelled.\n'
 
 
 def test_cli_invalid_configuration_is_concise(monkeypatch, capsys):
-    monkeypatch.setenv('LIQUID_CPU', 'not-a-number')
+    monkeypatch.setenv('MUTACOMP_CPU', 'not-a-number')
     assert main(['status']) == 1
     assert 'configuration' in capsys.readouterr().err
 
@@ -239,14 +239,14 @@ def test_uncertain_request_exposes_its_stable_idempotency_key(operation, configu
 
 @pytest.mark.parametrize('command', ['init', 'status'])
 @pytest.mark.parametrize(('filename', 'content'), [
-    ('liquid.yaml', 'api_url: [\n'),
-    ('liquid.json', json.dumps({'api_url': 'https://☃.invalid/v1'})),
-    ('liquid.json', json.dumps({'api_url': 'https://api.invalid/\0/v1'})),
+    ('mutacomp.yaml', 'api_url: [\n'),
+    ('mutacomp.json', json.dumps({'api_url': 'https://☃.invalid/v1'})),
+    ('mutacomp.json', json.dumps({'api_url': 'https://api.invalid/\0/v1'})),
 ])
 def test_cli_reports_invalid_configuration_without_traceback(command, filename, content, tmp_path, capsys):
     """Prevent malformed configuration or HTTPX-incompatible URLs from crashing either CLI command."""
     (tmp_path / filename).write_text(content)
     assert main([command]) == 1
     output = capsys.readouterr()
-    assert 'Invalid Liquid configuration' in output.err
+    assert 'Invalid Mutating Compute configuration' in output.err
     assert 'Traceback' not in output.err

@@ -1,4 +1,4 @@
-"""An independent real TCP mock implementing the Liquid API wire contract."""
+"""An independent real TCP mock implementing the Mutating Compute API wire contract."""
 
 import hashlib
 import json
@@ -238,6 +238,6 @@ def cli_environment(mock_api, tmp_path):
     root = Path(__file__).resolve().parents[2]
     return {
         **os.environ, 'PYTHONPATH': str(root), 'PYTHON_KEYRING_BACKEND': 'tests.keyring_backend.FileKeyring',
-        'LIQUID_TEST_KEYRING': str(tmp_path / 'test-vault.json'), 'LIQUID_API_URL': mock_api.url,
-        'LIQUID_POLL_INTERVAL': '0.01', 'LIQUID_RETRY_BACKOFF': '0.0',
+        'MUTACOMP_TEST_KEYRING': str(tmp_path / 'test-vault.json'), 'MUTACOMP_API_URL': mock_api.url,
+        'MUTACOMP_POLL_INTERVAL': '0.01', 'MUTACOMP_RETRY_BACKOFF': '0.0',
     }

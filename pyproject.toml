@@ -3,16 +3,16 @@ requires = ["setuptools==68.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "liquidcomp"
-version = "0.0.2"
+name = "mutacomp"
+version = "0.0.1"
 authors = [
   { name="Evgeniy Blinov", email="zheni-b@yandex.ru" },
 ]
-description = 'Run throng commands on Liquid Compute'
+description = 'Run throng commands on Mutating Compute'
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    'throng>=0.0.10',
+    'throng>=0.0.11',
     'cantok>=0.0.42',
     'pristan>=0.0.24',
     'skelet>=0.0.21',
@@ -52,26 +52,26 @@ keywords = [
 ]
 
 [tool.setuptools.package-data]
-"liquidcomp" = ["py.typed"]
+"mutacomp" = ["py.typed"]
 
 [project.scripts]
-liquid = "liquidcomp.cli:main"
+mutacomp = "mutacomp.cli:main"
 
 [project.entry-points.throng]
-liquid = "liquidcomp.plugin"
+mutacomp = "mutacomp.plugin"
 
 [tool.setuptools.packages.find]
-include = ["liquidcomp*"]
+include = ["mutacomp*"]
 
 [tool.mutmut]
-paths_to_mutate=["liquidcomp"]
+paths_to_mutate=["mutacomp"]
 
 [tool.coverage.run]
-branch = "${LIQUIDCOMP_COVERAGE_BRANCH-false}"
+branch = "${MUTACOMP_COVERAGE_BRANCH-false}"
 omit = ["*tests*"]
 parallel = true
 plugins = ["coverage_pyver_pragma"]
-source = ["liquidcomp"]
+source = ["mutacomp"]
 
 [tool.pytest.ini_options]
 norecursedirs = ["build", "mutants"]
@@ -83,5 +83,5 @@ lint.isort.combine-as-imports = true
 format.quote-style = "single"
 
 [project.urls]
-'Source' = 'https://github.com/mutating/liquidcomp'
-'Tracker' = 'https://github.com/mutating/liquidcomp/issues'
+'Source' = 'https://github.com/mutating/mutacomp'
+'Tracker' = 'https://github.com/mutating/mutacomp/issues'
