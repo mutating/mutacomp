@@ -1,3 +1,20 @@
+<details>
+  <summary>ⓘ</summary>
+
+[![Downloads](https://static.pepy.tech/badge/mutacomp/month)](https://pepy.tech/project/mutacomp)
+[![Downloads](https://static.pepy.tech/badge/mutacomp)](https://pepy.tech/project/mutacomp)
+[![Coverage Status](https://coveralls.io/repos/github/mutating/mutacomp/badge.svg?branch=main)](https://coveralls.io/github/mutating/mutacomp?branch=main)
+[![Lines of code](https://sloc.xyz/github/mutating/mutacomp/?category=code)](https://github.com/boyter/scc/)
+[![Hits-of-Code](https://hitsofcode.com/github/mutating/mutacomp?branch=main)](https://hitsofcode.com/github/mutating/mutacomp/view?branch=main)
+[![Test-Package](https://github.com/mutating/mutacomp/actions/workflows/tests_and_coverage.yml/badge.svg)](https://github.com/mutating/mutacomp/actions/workflows/tests_and_coverage.yml)
+[![Python versions](https://img.shields.io/pypi/pyversions/mutacomp.svg)](https://pypi.python.org/pypi/mutacomp)
+[![PyPI version](https://badge.fury.io/py/mutacomp.svg)](https://badge.fury.io/py/mutacomp)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mutating/mutacomp)
+
+</details>
+
 # mutacomp
 
 Run [throng](https://github.com/mutating/throng) commands on your Mutating Compute fleet. Personal and organization tokens use the same API; the server determines which computers are available to each token.
