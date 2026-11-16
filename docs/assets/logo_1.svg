@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-label="Mutating Compute — smooth vector black-chrome symbol">
+<defs>
+  <path id="mark" d="M 501,174
+ C 582.0232,173.5127 641.4338,232.1564 650,310
+ C 655.0743,356.1113 636.6102,401.8068 649,442
+ C 663.7289,489.7814 716.7206,507.4291 758,534
+ C 819.5899,573.6445 841.8382,637.6986 825,705
+ C 807.8087,773.7129 758.0011,816.0322 698,818
+ C 636.0011,820.0333 616.1302,792.8661 575,753
+ C 548.0849,726.9121 526.9874,716.7129 501,718
+ C 467.9799,719.6354 448.0702,740.086 415,767
+ C 373.0887,801.1093 347,807 300,807
+ C 231,807 173.3475,754.9404 161,684
+ C 149.3282,616.942 175.9874,560.9768 237,528
+ C 286.9897,500.981 330.9228,483.9527 353,448
+ C 381.8991,400.9379 363.5848,355.9893 365,309
+ C 367.3197,231.9765 421.9951,174.4752 501,174 Z"/>
+  <clipPath id="markClip"><use href="#mark"/></clipPath>
+  <filter id="mist" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="15"/></filter>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="silk" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+  <filter id="deep" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="29"/></filter>
+  <radialGradient id="blackChrome" cx="48%" cy="53%" r="71%" fx="49%" fy="51%">
+    <stop offset="0" stop-color="#000105"/><stop offset=".40" stop-color="#01040c"/><stop offset=".65" stop-color="#080d1b"/>
+    <stop offset=".83" stop-color="#101a34"/><stop offset=".94" stop-color="#0b1029"/><stop offset="1" stop-color="#02030c"/>
+  </radialGradient>
+  <radialGradient id="centralBlack" cx="52%" cy="46%" r="57%"><stop stop-color="#000104"/><stop offset=".69" stop-color="#010208" stop-opacity=".94"/><stop offset="1" stop-color="#00030f" stop-opacity="0"/></radialGradient>
+  <radialGradient id="topGlass" cx="35%" cy="7%" r="100%"><stop stop-color="#dfe8ff" stop-opacity=".87"/><stop offset=".14" stop-color="#657aa5" stop-opacity=".68"/><stop offset=".37" stop-color="#1a2846" stop-opacity=".43"/><stop offset=".70" stop-color="#030811" stop-opacity=".06"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient>
+  <radialGradient id="lowerLobe" cx="18%" cy="15%" r="90%"><stop stop-color="#8597da" stop-opacity=".85"/><stop offset=".17" stop-color="#34487e" stop-opacity=".48"/><stop offset=".47" stop-color="#070d27" stop-opacity=".35"/><stop offset="1" stop-color="#00030e" stop-opacity="0"/></radialGradient>
+  <radialGradient id="rightLobe" cx="85%" cy="22%" r="84%"><stop stop-color="#c6b1dd" stop-opacity=".95"/><stop offset=".12" stop-color="#506aa8" stop-opacity=".68"/><stop offset=".38" stop-color="#152957" stop-opacity=".31"/><stop offset=".74" stop-color="#070d18" stop-opacity=".1"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient>
+  <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="167" y1="225" x2="810" y2="810">
+    <stop offset="0" stop-color="#e4eeff"/><stop offset=".13" stop-color="#f9fcff"/><stop offset=".25" stop-color="#91a8ff"/><stop offset=".38" stop-color="#a66ef9"/>
+    <stop offset=".52" stop-color="#1876ff"/><stop offset=".68" stop-color="#7ee9ff"/><stop offset=".80" stop-color="#f9dded"/><stop offset=".91" stop-color="#738bff"/><stop offset="1" stop-color="#e7f2ff"/>
+  </linearGradient>
+  <linearGradient id="cold" x1="370" y1="280" x2="180" y2="790" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#f5f8ff"/><stop offset=".12" stop-color="#b1b4ff"/><stop offset=".30" stop-color="#be31ee"/><stop offset=".42" stop-color="#225bf9"/>
+    <stop offset=".52" stop-color="#36b2ff"/><stop offset=".63" stop-color="#f5fbff"/><stop offset=".74" stop-color="#6caeff"/><stop offset=".84" stop-color="#181ec8"/><stop offset="1" stop-color="#00c9ff"/>
+  </linearGradient>
+  <linearGradient id="warm" x1="635" y1="280" x2="828" y2="803" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#f7faff"/><stop offset=".14" stop-color="#b5e6ff"/><stop offset=".26" stop-color="#317aff"/><stop offset=".43" stop-color="#12d7ff"/>
+    <stop offset=".60" stop-color="#304eff"/><stop offset=".72" stop-color="#8bd8ff"/><stop offset=".84" stop-color="#fff0ec"/><stop offset=".92" stop-color="#f48ce5"/><stop offset="1" stop-color="#417bff"/>
+  </linearGradient>
+  <linearGradient id="bottom" x1="168" y1="745" x2="841" y2="751" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#2749e8"/><stop offset=".1" stop-color="#39cbff"/><stop offset=".21" stop-color="#ffed9b"/>
+    <stop offset=".29" stop-color="#b5f2ff"/><stop offset=".40" stop-color="#5147fa"/><stop offset=".50" stop-color="#15133b"/>
+    <stop offset=".62" stop-color="#3b9bff"/><stop offset=".74" stop-color="#fc56e1"/><stop offset=".83" stop-color="#fffbcf"/>
+    <stop offset=".91" stop-color="#5ceaff"/><stop offset="1" stop-color="#234bfc"/>
+  </linearGradient>
+  <linearGradient id="dimBlue" x1="323" y1="393" x2="670" y2="700" gradientUnits="userSpaceOnUse"><stop stop-color="#bbd5ff" stop-opacity=".75"/><stop offset=".25" stop-color="#486aaf" stop-opacity=".43"/><stop offset=".64" stop-color="#050b2c" stop-opacity=".06"/><stop offset="1" stop-color="#93b5ff" stop-opacity=".40"/></linearGradient>
+  <linearGradient id="glassStreak" x1="443" y1="205" x2="558" y2="325" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff" stop-opacity=".98"/><stop offset=".42" stop-color="#bfccee" stop-opacity=".91"/><stop offset=".78" stop-color="#60749f" stop-opacity=".3"/><stop offset="1" stop-color="#6279a3" stop-opacity="0"/></linearGradient>
+  <radialGradient id="glint" cx="30%" cy="20%"><stop stop-color="#ffffff" stop-opacity=".98"/><stop offset=".22" stop-color="#eef3ff" stop-opacity=".95"/><stop offset=".54" stop-color="#aebce0" stop-opacity=".43"/><stop offset="1" stop-color="#a4bbf7" stop-opacity="0"/></radialGradient>
+  <radialGradient id="warmSpot"><stop stop-color="#fff9db" stop-opacity=".9"/><stop offset=".19" stop-color="#ffbbd4" stop-opacity=".8"/><stop offset=".49" stop-color="#78bfff" stop-opacity=".5"/><stop offset="1" stop-color="#3139e8" stop-opacity="0"/></radialGradient>
+  <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#252738"/><stop offset=".32" stop-color="#11121b"/><stop offset=".68" stop-color="#07080e"/><stop offset="1" stop-color="#05050a"/></linearGradient>
+  <linearGradient id="tileStroke" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d0d5ff" stop-opacity=".83"/><stop offset=".26" stop-color="#444e77" stop-opacity=".55"/><stop offset=".6" stop-color="#151b2b" stop-opacity=".6"/><stop offset="1" stop-color="#657fb4" stop-opacity=".37"/></linearGradient>
+</defs>
+
+<g id="mutating-compute-symbol">
+<!-- One softly blurred contour, and one exact matching crisp contour. -->
+<use href="#mark" fill="none" stroke="#5d76fc" stroke-width="16" opacity=".22" filter="url(#soft)"/>
+<!-- Solid body, modeled with native SVG gradients -->
+<use href="#mark" fill="url(#blackChrome)"/>
+<g clip-path="url(#markClip)">
+  <!-- Volume of the three dark lobes -->
+  <path d="M 382,307 C 379,225 443,181 502,185 C 568,184 629,238 632,314 C 635,380 602,416 593,494 C 588,558 622,606 585,642 C 535,670 449,667 418,622 C 396,574 423,517 402,458 C 390,417 376,368 382,307Z" fill="url(#topGlass)" opacity=".45"/>
+  <ellipse cx="282" cy="651" rx="161" ry="169" fill="url(#lowerLobe)" opacity=".55"/>
+  <ellipse cx="729" cy="662" rx="171" ry="179" fill="url(#rightLobe)" opacity=".65"/>
+  <ellipse cx="499" cy="521" rx="243" ry="259" fill="url(#centralBlack)" opacity=".94"/>
+  <!-- Left neck to shoulder: deep colored reflection and very narrow silvery edge -->
+  <path d="M 375,296 C 364,355 387,392 366,445 C 344,501 294,518 239,547 C 198,572 176,619 185,689" fill="none" stroke="url(#cold)" stroke-width="63" stroke-linecap="round" opacity=".53" filter="url(#mist)"/>
+  <path d="M 375,288 C 363,364 384,393 359,445 C 335,492 300,519 231,550 C 185,574 175,622 184,685" fill="none" stroke="url(#cold)" stroke-width="34" stroke-linecap="round" opacity=".7" filter="url(#soft)"/>
+  <path d="M 373,288 C 357,360 382,402 353,447 C 324,494 286,514 229,545 C 189,569 172,615 176,673" fill="none" stroke="url(#cold)" stroke-width="13" stroke-linecap="round" opacity=".86" filter="url(#silk)"/>
+  <!-- Right neck and shoulder -->
+  <path d="M 639,287 C 653,369 620,390 651,449 C 678,496 717,512 765,544 C 806,574 831,622 813,694" fill="none" stroke="url(#warm)" stroke-width="69" stroke-linecap="round" opacity=".66" filter="url(#mist)"/>
+  <path d="M 642,283 C 653,361 623,398 657,447 C 683,487 723,515 766,540 C 817,569 837,626 817,704" fill="none" stroke="url(#warm)" stroke-width="33" stroke-linecap="round" opacity=".82" filter="url(#soft)"/>
+  <path d="M 642,280 C 653,364 627,401 661,445 C 689,485 731,514 768,538 C 815,569 838,622 819,705" fill="none" stroke="url(#warm)" stroke-width="12" stroke-linecap="round" opacity=".81" filter="url(#silk)"/>
+  <!-- Interior curvature of the neck --><path d="M 405,348 C 403,429 459,462 426,548 C 404,598 364,612 344,647" fill="none" stroke="url(#dimBlue)" stroke-width="18" opacity=".6" filter="url(#soft)"/>
+  <path d="M 604,355 C 609,428 559,465 585,557 C 601,619 632,642 690,681" fill="none" stroke="url(#dimBlue)" stroke-width="24" opacity=".72" filter="url(#soft)"/>
+  <!-- Bottom lip, curved inner reflection -->
+  <path d="M 171,680 C 180,757 241,797 295,795 C 381,802 426,719 501,704 C 561,696 603,744 631,779 C 705,864 824,782 827,686" fill="none" stroke="url(#bottom)" stroke-width="60" opacity=".62" filter="url(#mist)"/>
+  <path d="M 166,683 C 181,757 235,805 302,796 C 387,801 436,713 502,708 C 567,704 599,759 640,786 C 712,832 802,795 826,692" fill="none" stroke="url(#bottom)" stroke-width="31" opacity=".88" filter="url(#soft)"/>
+  <path d="M 367,741 C 432,677 462,651 507,652 C 576,653 619,715 659,761" fill="none" stroke="#1f48a8" stroke-width="22" opacity=".46" filter="url(#soft)"/>
+  <path d="M 405,710 C 448,670 470,659 513,661 C 576,665 610,718 636,746" fill="none" stroke="#7096d4" stroke-width="6" opacity=".34" filter="url(#soft)"/>
+  <!-- Mirror-like polished facets: all are smooth Bézier shapes -->
+  <path d="M 419,260 C 446,215 491,206 533,217 C 545,221 555,229 563,241 C 543,236 522,225 501,229 C 469,230 439,249 426,274 C 410,301 417,319 409,337 C 400,315 399,293 419,260Z" fill="url(#glassStreak)" opacity=".94" filter="url(#silk)"/>
+  <path d="M 446,224 C 482,203 524,210 552,232 C 524,222 496,222 472,235 C 452,246 442,260 434,274 C 437,250 438,236 446,224Z" fill="#f1f4ff" opacity=".32" filter="url(#soft)"/>
+  <path d="M 222,606 C 245,572 272,560 292,573 C 306,588 296,620 264,654 C 242,681 220,689 216,676 C 208,657 207,632 222,606 Z" fill="url(#glint)" opacity=".85"/>
+  <path d="M 749,635 C 772,651 785,690 775,725 C 759,743 743,730 735,701 C 730,676 737,649 749,635 Z" fill="url(#glint)" opacity=".28" filter="url(#soft)"/>
+  <ellipse cx="764" cy="577" rx="68" ry="80" fill="url(#warmSpot)" opacity=".82" filter="url(#soft)"/>
+  <ellipse cx="266" cy="759" rx="62" ry="29" fill="url(#warmSpot)" opacity=".57" filter="url(#soft)"/>
+  <ellipse cx="700" cy="757" rx="50" ry="35" fill="url(#warmSpot)" opacity=".54" filter="url(#soft)"/>
+  <!-- Small center-to-edge glossy dark roll -->
+  <path d="M 364,528 C 414,473 428,424 418,386 C 448,459 448,496 418,545 C 389,592 356,605 320,622 C 335,586 337,566 364,528Z" fill="#99b4ec" opacity=".10" filter="url(#soft)"/>
+  <path d="M 636,503 C 606,459 588,426 592,385 C 566,451 560,489 588,537 C 616,584 655,620 696,638 C 672,584 660,548 636,503Z" fill="#8ba7e8" opacity=".12" filter="url(#soft)"/>
+</g>
+<!-- Single outer contour: the same geometric path as the body, without duplicate guide curves. -->
+<use href="#mark" fill="none" stroke="url(#rim)" stroke-width="2.2" opacity=".84" />
+</g>
+</svg>
